@@ -148,6 +148,7 @@ export default function LoginPage() {
                         </div>
 
                         <button
+                            type="submit"
                             disabled={isLoading}
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3.5 rounded-xl shadow-[0_0_20px_-5px_var(--color-primary)] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                         >

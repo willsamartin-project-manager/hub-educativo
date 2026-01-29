@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description: "Aprenda jogando com inteligência artificial.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
