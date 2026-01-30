@@ -22,36 +22,75 @@ export default function ArenaPage() {
 }
 
 function ArenaContent() {
-    const { status, currentQuestionIndex, deck, score, startGame, answerQuestion, resetGame } = useGameStore((state: any) => state)
+    const { status, currentQuestionIndex, deck, score, startGame, answerQuestion, resetGame, restartGame, mode, subject, grade, appendQuestions, lives } = useGameStore((state: any) => state)
     const currentQuestion = deck[currentQuestionIndex]
 
     const searchParams = useSearchParams()
     const deckId = searchParams.get('deckId')
     const [isLoadingDeck, setIsLoadingDeck] = useState(false)
 
+    // Marathon Mode Controller
+    // Monitors progress and fetches more questions if needed
+    useEffect(() => {
+        if (mode !== 'marathon' || status !== 'playing') return
+
+        const thresholds = [deck.length - 3, deck.length - 1] // Fetch when 3 left, retry when 1 left
+        const shouldFetch = thresholds.includes(currentQuestionIndex)
+
+        const fetchMore = async () => {
+            // Avoid fetching if we already have plenty
+            if (deck.length - currentQuestionIndex > 5) return
+
+            console.log('Marathon Mode: Fetching more questions...')
+            try {
+                const res = await fetch('/api/generate-deck', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        subject: subject || 'Conhecimentos Gerais',
+                        grade: grade || 'Ensino Médio',
+                        userId: 'marathon-refill',
+                    })
+                })
+                const data = await res.json()
+                if (data.deck) {
+                    appendQuestions(data.deck)
+                }
+            } catch (e) {
+                console.error('Refill failed', e)
+            }
+        }
+
+        if (shouldFetch) {
+            fetchMore()
+        }
+    }, [currentQuestionIndex, mode, status, deck.length, subject, grade, appendQuestions])
+
+
     useEffect(() => {
         // If coming from Library with a specific deck ID, load it instantly
         const loadDeck = async () => {
-            if (!deckId || status !== 'idle') return
+            if (!deckId) return
 
             setIsLoadingDeck(true)
             const { data } = await supabase.from('decks').select('*').eq('id', deckId).single()
 
             if (data && data.questions) {
-                startGame(data.questions, deckId)
+                // Determine if this is a Marathon deck request (optional) or just force standard
+                startGame(data.questions, deckId, 'standard', data.subject, data.grade)
             }
             setIsLoadingDeck(false)
         }
 
         loadDeck()
-    }, [deckId, startGame, status])
+    }, [deckId, startGame])
 
     if (isLoadingDeck) {
         return <LoadingOverlay />
     }
 
     if (status === 'idle') {
-        return <LobbyScreen onStart={(newDeck, newDeckId) => startGame(newDeck, newDeckId)} />
+        return <LobbyScreen onStart={(newDeck, newDeckId, mode, subject, grade) => startGame(newDeck, newDeckId, mode, subject, grade)} />
     }
 
     return (
@@ -68,13 +107,17 @@ function ArenaContent() {
                     <ArrowLeft className="w-6 h-6" />
                 </Link>
                 <div className="font-mono font-bold text-xl text-primary">
+                    <span className="text-xs text-muted-foreground mr-2">{mode === 'marathon' ? '∞ MARATONA' : ''}</span>
                     R$ {score.toLocaleString()}
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="text-xs font-bold uppercase text-muted-foreground mr-2">Vidas</div>
-                    <div className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_var(--color-red-500)]" />
-                    <div className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_var(--color-red-500)]" />
-                    <div className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_var(--color-red-500)]" />
+                    {[...Array(3)].map((_, i) => (
+                        <div
+                            key={i}
+                            className={`w-3 h-3 rounded-full transition-all duration-500 ${i < lives ? 'bg-red-500 shadow-[0_0_10px_var(--color-red-500)]' : 'bg-gray-800'}`}
+                        />
+                    ))}
                 </div>
             </header>
 
@@ -88,10 +131,11 @@ function ArenaContent() {
                             onAnswer={answerQuestion}
                             index={currentQuestionIndex + 1}
                             total={deck.length}
+                            mode={mode}
                         />
                     )}
                     {(status === 'won' || status === 'lost') && (
-                        <ResultView status={status} score={score} onReset={resetGame} />
+                        <ResultView status={status} score={score} onReset={resetGame} onRestart={restartGame} />
                     )}
                 </AnimatePresence>
             </main>
@@ -99,9 +143,11 @@ function ArenaContent() {
     )
 }
 
-function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string) => void }) {
+function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, mode: 'standard' | 'marathon', subject: string, grade: string) => void }) {
     const [isLoading, setIsLoading] = useState(false)
     const [userId, setUserId] = useState<string | null>(null)
+    const [selectedGrade, setSelectedGrade] = useState('Ensino Médio')
+    const [selectedMode, setSelectedMode] = useState<'standard' | 'marathon'>('standard')
 
     // Fetch User ID on mount
     const fetchUser = async () => {
@@ -127,15 +173,18 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string) 
             return
         }
 
+        const subject = (document.getElementById('subject-input') as HTMLInputElement)?.value || 'Conhecimentos Gerais'
+
         setIsLoading(true)
         try {
             const res = await fetch('/api/generate-deck', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    subject: (document.getElementById('subject-input') as HTMLInputElement)?.value || 'Conhecimentos Gerais',
-                    grade: 'Ensino Médio',
-                    userId: userId // Sending User ID for billing
+                    subject,
+                    grade: selectedGrade,
+                    userId: userId, // Sending User ID for billing
+                    // In future we might send 'mode' to bill differently
                 })
             })
             const data = await res.json()
@@ -147,7 +196,7 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string) 
             }
 
             if (data.deck && data.deckId) {
-                onStart(data.deck, data.deckId)
+                onStart(data.deck, data.deckId, selectedMode, subject, selectedGrade)
             } else {
                 // Handle legacy/error
                 alert('Erro ao gerar deck (ID ausente).')
@@ -186,12 +235,39 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string) 
                             className="w-full bg-secondary/50 border border-border/50 rounded-xl p-4 outline-none focus:ring-2 ring-primary/50 text-lg font-medium placeholder:text-muted-foreground/50 transition-all"
                         />
                     </div>
+
                     <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold text-muted-foreground">Dificuldade</label>
+                        <label className="text-xs uppercase font-bold text-muted-foreground">Modo de Jogo</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => setSelectedMode('standard')}
+                                className={`p-4 rounded-xl border border-border/50 text-left transition-all relative overflow-hidden ${selectedMode === 'standard' ? 'bg-primary/20 border-primary shadow-[0_0_15px_-5px_var(--color-primary)]' : 'hover:bg-white/5'}`}
+                            >
+                                <div className="font-bold mb-1">Padrão</div>
+                                <div className="text-xs text-muted-foreground">10 Perguntas<br />50 Moedas</div>
+                                {selectedMode === 'standard' && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse" />}
+                            </button>
+                            <button
+                                onClick={() => setSelectedMode('marathon')}
+                                className={`p-4 rounded-xl border border-border/50 text-left transition-all relative overflow-hidden ${selectedMode === 'marathon' ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_-5px_purple]' : 'hover:bg-white/5'}`}
+                            >
+                                <div className="font-bold mb-1 text-purple-400">Maratona ∞</div>
+                                <div className="text-xs text-muted-foreground">Infinito<br />100 Moedas</div>
+                                {selectedMode === 'marathon' && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-500 animate-pulse" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs uppercase font-bold text-muted-foreground">Nível de Ensino</label>
                         <div className="flex gap-2">
-                            {['Fácil', 'Médio', 'Difícil'].map((l, i) => (
-                                <button key={i} className={`flex-1 py-3 rounded-xl border border-border/50 text-sm font-medium hover:bg-white/5 transition-colors ${i === 1 ? 'bg-primary/20 border-primary text-primary' : ''}`}>
-                                    {l}
+                            {['Fundamental', 'Ensino Médio', 'Superior'].map((grade) => (
+                                <button
+                                    key={grade}
+                                    onClick={() => setSelectedGrade(grade)}
+                                    className={`flex-1 py-3 rounded-xl border border-border/50 text-sm font-medium hover:bg-white/5 transition-colors ${selectedGrade === grade ? 'bg-primary/20 border-primary text-primary' : ''}`}
+                                >
+                                    {grade}
                                 </button>
                             ))}
                         </div>
@@ -203,7 +279,13 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string) 
                             disabled={isLoading}
                             className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl shadow-[0_0_20px_-5px_var(--color-primary)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <> COMPRAR E JOGAR <span className="text-xs opacity-80">(50$)</span> <Play className="w-4 h-4 fill-current" /> </>}
+                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>
+                                COMPRAR E JOGAR
+                                <span className="text-xs opacity-80 bg-black/20 px-2 py-0.5 rounded-full">
+                                    {selectedMode === 'marathon' ? '100$' : '50$'}
+                                </span>
+                                <Play className="w-4 h-4 fill-current" />
+                            </>}
                         </button>
                         <p className="text-xs text-center text-muted-foreground">O deck ficará salvo na sua biblioteca.</p>
                     </div>
@@ -213,7 +295,7 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string) 
     )
 }
 
-function QuestionView({ question, onAnswer, index, total }: any) {
+function QuestionView({ question, onAnswer, index, total, mode }: any) {
     const [selected, setSelected] = useState<number | null>(null)
     const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
     const [showFeedback, setShowFeedback] = useState(false)
@@ -246,22 +328,7 @@ function QuestionView({ question, onAnswer, index, total }: any) {
     }
 
     const handleNext = () => {
-        // If wrong, end game now
-        if (result === 'wrong') {
-            // We need a way to trigger 'lost' state manually since we removed it from store's answerQuestion
-            // Actually, nextQuestion checks if last question, but doesn't handle loss.
-            // We can just add a 'endGame' action or handle it here?
-            // Simplest: The store needs a 'endGame(status)' action or we re-introduce logic in nextQuestion?
-            // Let's create a dirty fix here: if wrong, we can resetGame or similar? No, we want ResultView.
-            // Ideally store should handle Game Over.
-            // Let's assume we update store AGAIN to handle 'forceEnd'.
-            // OR: We modify 'nextQuestion' to take a 'wasWrong' param?
-
-            // Quick fix: Just use a direct set (if using zustand devtools might be ugly but works):
-            useGameStore.setState({ status: 'lost' })
-        } else {
-            nextQuestion()
-        }
+        nextQuestion()
     }
 
     return (
@@ -272,7 +339,9 @@ function QuestionView({ question, onAnswer, index, total }: any) {
             exit={{ opacity: 0, x: -50 }}
         >
             <div className="text-center mb-8">
-                <span className="text-xs uppercase tracking-[0.2em] text-primary font-bold">Questão {index}/{total}</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
+                    {mode === 'marathon' ? `Questão ${index}` : `Questão ${index}/${total}`}
+                </span>
                 <h2 className="text-2xl md:text-4xl font-bold mt-4 leading-tight">{question.text}</h2>
             </div>
 
@@ -328,11 +397,14 @@ function QuestionView({ question, onAnswer, index, total }: any) {
     )
 }
 
-function ResultView({ status, score, onReset }: any) {
+function ResultView({ status, score, onReset, onRestart }: any) {
     const { deckId, deck } = useGameStore((state: any) => state)
     const [isSaving, setIsSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const { play } = useSound()
+    const searchParams = useSearchParams()
+    const mode = searchParams.get('mode')
+    const [isGuest, setIsGuest] = useState(false)
 
     useEffect(() => {
         if (status === 'won') {
@@ -356,14 +428,17 @@ function ResultView({ status, score, onReset }: any) {
 
             const { supabase } = await import('@/lib/supabase')
             const { data: { user } } = await supabase.auth.getUser()
+
             if (user) {
                 await supabase.from('matches').insert({
                     user_id: user.id,
                     deck_id: deckId,
                     score: score,
-                    max_score: deck.length * 100 // Assuming 100 per question roughly for percent calc
+                    max_score: deck.length * 100
                 })
                 setSaved(true)
+            } else {
+                setIsGuest(true)
             }
             setIsSaving(false)
         }
@@ -395,9 +470,26 @@ function ResultView({ status, score, onReset }: any) {
                 <div className="text-4xl font-mono font-bold text-primary">R$ {score.toLocaleString()}</div>
             </div>
 
+            {/* Guest CTA */}
+            {isGuest && mode === 'daily' && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 max-w-sm mx-auto animate-in slide-in-from-bottom fade-in duration-700">
+                    <p className="text-sm text-primary font-bold mb-2">🔥 Você mandou bem!</p>
+                    <p className="text-xs text-muted-foreground mb-3">Crie uma conta para salvar sua pontuação no Ranking Diário.</p>
+                    <Link href="/login?mode=signup" className="block w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold shadow-lg hover:scale-105 transition-transform">
+                        Criar Conta Grátis
+                    </Link>
+                </div>
+            )}
+
             <div className="flex gap-4 justify-center pt-4">
-                <Link href="/decks" onClick={onReset} className="px-6 py-3 rounded-xl hover:bg-white/5 transition-colors font-medium">Voltar aos Decks</Link>
-                <button onClick={onReset} className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">Jogar Novamente</button>
+                <Link
+                    href={isGuest ? "/" : "/decks"}
+                    onClick={onReset}
+                    className="px-6 py-3 rounded-xl hover:bg-white/5 transition-colors font-medium"
+                >
+                    {isGuest ? "Voltar ao Início" : "Voltar aos Decks"}
+                </Link>
+                <button onClick={onRestart} className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">Jogar Novamente</button>
             </div>
         </motion.div>
     )

@@ -19,13 +19,19 @@ type GameState = {
     }
     deck: Question[]
     deckId: string | null
+    mode: 'standard' | 'marathon' | 'daily'
+    subject: string
+    grade: string
+    lives: number
 
     // Actions
-    startGame: (deck: Question[], deckId: string) => void
+    startGame: (deck: Question[], deckId: string, mode?: 'standard' | 'marathon' | 'daily', subject?: string, grade?: string) => void
     answerQuestion: (index: number) => 'correct' | 'wrong'
     nextQuestion: () => void
+    appendQuestions: (questions: Question[]) => void
     useLifeline: (type: 'skip' | 'fiftyFifty') => void
     resetGame: () => void
+    restartGame: () => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -38,56 +44,62 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
     deck: [],
     deckId: null,
+    mode: 'standard',
+    subject: '',
+    grade: '',
+    lives: 3,
 
-    startGame: (deck, deckId) => set({
+    startGame: (deck, deckId, mode = 'standard', subject = '', grade = '') => set({
         status: 'playing',
         deck,
         deckId,
+        mode,
+        subject,
+        grade,
+        lives: 3,
         currentQuestionIndex: 0,
         score: 0,
         lifelines: { skip: true, fiftyFifty: true }
     }),
 
     answerQuestion: (optionIndex) => {
-        const { deck, currentQuestionIndex, score } = get()
+        const { deck, currentQuestionIndex, score, lives } = get()
         const question = deck[currentQuestionIndex]
 
         if (optionIndex === question.correctIndex) {
-            // Correct logic
-            // We just update score here, DO NOT move index
             set({ score: score + 100 })
             return 'correct'
         } else {
-            // Wrong logic - Game Over? 
-            // WAIT: If we want to show explanation even on wrong answer, we shouldn't set status='lost' immediately if life system allows continue.
-            // But current logic is "Show do Milhão" (Single elimination?).
-            // If single elimination, 'lost' status ends game immediately and shows ResultView.
-            // Meaning explanation on LOSS is tricky unless we change 'lost' behavior.
-
-            // For now, let's keep Single Elimination but maybe delay the 'lost' status transition?
-            // Actually, if we return 'wrong', the UI shows red.
-            // We should NOT set 'lost' yet if we want to show explanation. 
-            // We can set a temporary 'review' state or just handle it in UI.
-
-            // Let's decided: "loss" means instant game over in Show do Milhão.
-            // So explanation on error might be shown IN the ResultView or we change rules.
-            // Assuming User wants explanation on error too before Game Over screen.
-
-            // Let's play safe: On Wrong, allow explanation, THEN Game Over when clicking Next.
+            const newLives = lives - 1
+            if (newLives <= 0) {
+                set({ lives: 0, status: 'lost' }) // Immediate game over if 0 lives
+            } else {
+                set({ lives: newLives })
+            }
             return 'wrong'
         }
     },
 
     nextQuestion: () => {
-        const { deck, currentQuestionIndex, score } = get()
+        const { deck, currentQuestionIndex, score, mode } = get()
         const isLastQuestion = currentQuestionIndex === deck.length - 1
 
         if (isLastQuestion) {
-            set({ status: 'won', score: score + 1000 }) // Bonus for completion
+            if (mode === 'marathon') {
+                // In marathon, if we ran out of questions, we just wait (or maybe set a loading status if we wanted)
+                // ideally appendQuestions should have happened before this.
+                // If we are here in marathon, user beat the generator.
+                return
+            }
+            set({ status: 'won', score: score + 1000 })
         } else {
             set({ currentQuestionIndex: currentQuestionIndex + 1 })
         }
     },
+
+    appendQuestions: (newQuestions) => set((state) => ({
+        deck: [...state.deck, ...newQuestions]
+    })),
 
     useLifeline: (type) => {
         set((state) => ({
@@ -95,11 +107,17 @@ export const useGameStore = create<GameState>((set, get) => ({
                 ...state.lifelines,
                 [type]: false
             },
-            // Logic for applying lifeline would happen in UI (e.g. hiding options)
-            // For 'skip', we just move next:
             currentQuestionIndex: type === 'skip' ? state.currentQuestionIndex + 1 : state.currentQuestionIndex
         }))
     },
 
-    resetGame: () => set({ status: 'idle', deck: [] })
+    resetGame: () => set({ status: 'idle', deck: [] }),
+
+    restartGame: () => set({
+        status: 'playing',
+        currentQuestionIndex: 0,
+        score: 0,
+        lives: 3,
+        lifelines: { skip: true, fiftyFifty: true }
+    })
 }))

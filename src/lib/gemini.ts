@@ -8,4 +8,11 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
-export const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+export const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash"
+});
+
+export const searchModel = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    tools: [{ googleSearch: {} }]
+});

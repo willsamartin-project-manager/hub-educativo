@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Brain, Gamepad2, Sparkles } from "lucide-react";
+import { DailyDeckCard } from "@/components/marketing/DailyDeckCard";
 
 export default function LandingPage() {
     return (
@@ -77,36 +78,7 @@ export default function LandingPage() {
 
                     {/* Hero Visual */}
                     <div className="flex-1 relative w-full max-w-[500px]">
-                        <div className="relative aspect-square rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-6 flex flex-col gap-4 overflow-hidden">
-                            {/* Mock Card */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-
-                            <div className="relative z-10 flex items-center justify-between border-b border-white/5 pb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-500 to-orange-500 flex items-center justify-center font-bold text-white shadow-lg">
-                                        🏆
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-bold">Desafio Diário</div>
-                                        <div className="text-xs text-muted-foreground">História • Ensino Médio</div>
-                                    </div>
-                                </div>
-                                <div className="text-green-400 font-mono text-sm">R$ 1.000,00</div>
-                            </div>
-
-                            <div className="relative z-10 bg-black/40 rounded-xl p-4 border border-white/5 h-full flex flex-col justify-center items-center text-center space-y-4">
-                                <span className="text-xs uppercase tracking-widest text-primary font-bold">Pergunta 5/10</span>
-                                <h3 className="text-xl font-medium">Qual foi o principal motivo da Revolução Francesa?</h3>
-
-                                <div className="w-full space-y-2 pt-2">
-                                    {['Desigualdade Social', 'Invasão Inglesa', 'Queda da Bastilha', 'Crise do Petróleo'].map((opt, i) => (
-                                        <div key={i} className={`w-full p-3 rounded-lg text-sm text-left border cursor-pointer transition-colors ${i === 0 ? 'border-primary bg-primary/20 text-white shadow-[0_0_15px_-5px_var(--color-primary)]' : 'border-white/5 hover:bg-white/5'}`}>
-                                            {String.fromCharCode(65 + i)}. {opt}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                        <DailyDeckCard />
                     </div>
                 </div>
             </main>
