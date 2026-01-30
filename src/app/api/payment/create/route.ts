@@ -18,9 +18,21 @@ export async function POST(req: Request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim() || '';
+    const client = new MercadoPagoConfig({ accessToken });
+
     try {
         const { packageId, amount, userId, email, firstName } = await req.json();
+
+        // LOGGING FOR DEBUGGING
+        const isTest = accessToken.includes('TEST');
+        console.log('Payment Request:', {
+            isTest: isTest,
+            tokenPrefix: accessToken.substring(0, 5) + '...',
+            packageId,
+            amount,
+            originalEmail: email
+        });
 
         // 1. Create Payment in Mercado Pago
         const payment = new Payment(client);
@@ -28,9 +40,12 @@ export async function POST(req: Request) {
         const idempotencyKey = `pay_${userId}_${Date.now()}`;
 
         // PREVENT 'PAYING YOURSELF' ERROR IN SANDBOX
-        // Mercado Pago rejects payments where Payer Email == Merchant Email
-        const isTest = process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith('TEST-');
-        const payerEmail = isTest ? `test_user_${Math.floor(Math.random() * 10000)}@test.com` : (email || 'user@hubeducativo.com');
+        // We force a random email if it appears to be a test environment
+        const payerEmail = isTest
+            ? `player_${userId.substring(0, 4)}_${Date.now()}@temp.game`
+            : (email || 'user@hubeducativo.com');
+
+        console.log('Using Payer Email:', payerEmail);
 
         const paymentData = {
             body: {
