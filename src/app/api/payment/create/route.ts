@@ -78,7 +78,8 @@ export async function POST(req: Request) {
         });
 
     } catch (error: any) {
-        console.error('Payment Creation Error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('Payment Creation Error FULL:', error);
+        if (error.cause) console.error('Cause:', error.cause);
+        return NextResponse.json({ error: error.message, details: error }, { status: 500 });
     }
 }
