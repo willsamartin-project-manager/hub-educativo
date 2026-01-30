@@ -55,6 +55,10 @@ export async function POST(req: Request) {
                 payer: {
                     email: payerEmail,
                     first_name: firstName || 'User',
+                    identification: {
+                        type: 'CPF',
+                        number: isTest ? '19119119100' : '19119119100' // TODO: Request CPF from user in Production
+                    }
                 },
                 external_reference: userId, // Useful to track who bought
                 notification_url: `https://hub-educativo.vercel.app/api/payment/webhook`
