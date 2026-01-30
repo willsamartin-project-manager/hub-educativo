@@ -3,13 +3,22 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
+    console.log('API: /api/payment/create STARTED'); // Immediate log to verify execution
+
     // Initialize clients INSIDE the handler to avoid build-time errors if env vars are missing
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
 
     // Validate keys at runtime
     if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase Keys');
         return NextResponse.json({ error: 'Server Misconfiguration: Missing Supabase Keys' }, { status: 500 });
+    }
+
+    if (!mpAccessToken) {
+        console.error('Missing Mercado Pago Access Token');
+        return NextResponse.json({ error: 'Server Misconfiguration: Missing MP Token' }, { status: 500 });
     }
 
     // BYPASS SSL CHECK (Local Dev / Corporate Proxy Fix)
@@ -18,14 +27,13 @@ export async function POST(req: Request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim() || '';
-    const client = new MercadoPagoConfig({ accessToken });
+    const client = new MercadoPagoConfig({ accessToken: mpAccessToken });
 
     try {
         const { packageId, amount, userId, email, firstName } = await req.json();
 
         // LOGGING FOR DEBUGGING
-        const isTest = accessToken.includes('TEST');
+        const isTest = mpAccessToken.includes('TEST');
         console.log('Payment Request:', {
             isTest: isTest,
             tokenPrefix: accessToken.substring(0, 5) + '...',
