@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const client = new MercadoPagoConfig({ accessToken: mpAccessToken });
 
     try {
-        const { packageId, amount, userId, email, firstName } = await req.json();
+        const { packageId, amount, userId, email, firstName, cpf } = await req.json();
 
         // LOGGING FOR DEBUGGING
         const isTest = mpAccessToken.includes('TEST');
@@ -39,7 +39,8 @@ export async function POST(req: Request) {
             tokenPrefix: mpAccessToken.substring(0, 5) + '...',
             packageId,
             amount,
-            originalEmail: email
+            originalEmail: email,
+            hasCpf: !!cpf
         });
 
         // 1. Create Payment in Mercado Pago
@@ -65,7 +66,9 @@ export async function POST(req: Request) {
                     first_name: firstName || 'User',
                     identification: {
                         type: 'CPF',
-                        number: isTest ? '19119119100' : '19119119100' // TODO: Request CPF from user in Production
+                        // Use provided CPF if available, otherwise fallback to test CPF (only works in test mode)
+                        // In PROD, 'cpf' MUST be provided by frontend
+                        number: cpf || '19119119100'
                     }
                 },
                 external_reference: userId, // Useful to track who bought

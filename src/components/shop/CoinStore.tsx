@@ -14,9 +14,34 @@ const PACKAGES = [
 
 export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
     const [loadingPackage, setLoadingPackage] = useState<number | null>(null)
-    const [qrCodeData, setQrCodeData] = useState<{ code: string, base64: string, id: string } | null>(null)
-    const [copied, setCopied] = useState(false)
-    const [status, setStatus] = useState<'waiting' | 'paid'>('waiting')
+    const [cpf, setCpf] = useState('')
+    const [showCpfInput, setShowCpfInput] = useState(false)
+    const [selectedPkg, setSelectedPkg] = useState<any>(null)
+
+    // Helper to format CPF
+    const formatCPF = (value: string) => {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1')
+    }
+
+    const initiateBuy = (pkg: any) => {
+        setSelectedPkg(pkg)
+        setShowCpfInput(true)
+    }
+
+    const confirmBuy = async () => {
+        if (!selectedPkg) return
+        if (cpf.length < 14) {
+            alert('CPF inválido')
+            return
+        }
+
+        handleBuy(selectedPkg, cpf.replace(/\D/g, ''))
+    }
 
     // Polling logic
     useEffect(() => {
@@ -33,10 +58,10 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
         return () => clearInterval(interval)
     }, [qrCodeData, status])
 
-    const handleBuy = async (pkg: any) => {
+    const handleBuy = async (pkg: any, cleanCpf: string) => {
         setLoadingPackage(pkg.id)
-        setQrCodeData(null)
-        setStatus('waiting')
+
+        // Don't close input yet, waiting for success
 
         try {
             // Get user ID (this needs to be robust, usually passed in or from auth hook)
@@ -56,7 +81,8 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                     packageId: pkg.id,
                     amount: pkg.price,
                     userId: user.id,
-                    email: user.email
+                    email: user.email,
+                    cpf: cleanCpf // Send CPF to backend
                 })
             })
 
@@ -67,8 +93,10 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                     base64: data.qr_code_base64,
                     id: data.id?.toString()
                 })
+                setShowCpfInput(false) // Success: hide input
+                setStatus('waiting')
             } else {
-                alert('Erro ao gerar PIX.')
+                alert('Erro ao gerar PIX: ' + (data.error || 'Desconhecido'))
             }
 
         } catch (e) {
@@ -101,7 +129,7 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                     animate={{ scale: 1, opacity: 1 }}
                     className="bg-card w-full max-w-lg rounded-3xl border border-white/10 shadow-2xl overflow-hidden relative"
                 >
-                    <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full">
+                    <button onClick={() => { onClose(); setShowCpfInput(false); setQrCodeData(null); }} className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full z-10">
                         <X className="w-5 h-5 text-muted-foreground" />
                     </button>
 
@@ -111,7 +139,32 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                     </div>
 
                     <div className="p-6">
-                        {qrCodeData ? (
+                        {showCpfInput ? (
+                            <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95">
+                                <h3 className="text-lg font-bold text-center">Informe seu CPF</h3>
+                                <p className="text-sm text-muted-foreground text-center -mt-2">Necessário para gerar o PIX.</p>
+
+                                <input
+                                    value={cpf}
+                                    onChange={(e) => setCpf(formatCPF(e.target.value))}
+                                    placeholder="000.000.000-00"
+                                    maxLength={14}
+                                    className="bg-secondary/50 border border-white/10 rounded-xl p-4 text-center text-xl font-mono tracking-widest outline-none focus:border-primary transition-colors"
+                                />
+
+                                <button
+                                    onClick={confirmBuy}
+                                    disabled={loadingPackage !== null}
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {loadingPackage ? <Loader2 className="animate-spin" /> : 'Confirmar e Pagar'}
+                                </button>
+
+                                <button onClick={() => setShowCpfInput(false)} className="text-sm text-muted-foreground hover:text-white">
+                                    Cancelar
+                                </button>
+                            </div>
+                        ) : qrCodeData ? (
                             <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
                                 <div className="text-sm font-bold text-green-400 mb-4 bg-green-400/10 px-3 py-1 rounded-full border border-green-400/20">
                                     PIX Gerado com Sucesso!
@@ -148,9 +201,8 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                                 {PACKAGES.map(pkg => (
                                     <button
                                         key={pkg.id}
-                                        onClick={() => handleBuy(pkg)}
-                                        disabled={loadingPackage !== null}
-                                        className={`w-full p-4 rounded-xl border border-white/5 hover:border-primary/50 transition-all group relative overflow-hidden text-left flex items-center justify-between ${loadingPackage === pkg.id ? 'opacity-50' : ''}`}
+                                        onClick={() => initiateBuy(pkg)}
+                                        className={`w-full p-4 rounded-xl border border-white/5 hover:border-primary/50 transition-all group relative overflow-hidden text-left flex items-center justify-between`}
                                     >
                                         {pkg.popular && (
                                             <div className="absolute top-0 right-0 bg-primary text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
@@ -169,11 +221,6 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                                         <div className="text-xl font-bold font-mono">
                                             R$ {pkg.price},00
                                         </div>
-                                        {loadingPackage === pkg.id && (
-                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                                <Loader2 className="w-6 h-6 animate-spin text-white" />
-                                            </div>
-                                        )}
                                     </button>
                                 ))}
                             </div>
