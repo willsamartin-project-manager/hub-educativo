@@ -14,5 +14,6 @@ export const model = genAI.getGenerativeModel({
 
 export const searchModel = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
-    tools: [{ googleSearchRetrieval: {} }]
+    // @ts-ignore - SDK types are out of sync with API requirements for 2.5-flash
+    tools: [{ googleSearch: {} }]
 });

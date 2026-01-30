@@ -1,0 +1,17 @@
+----------------------------------------
+🧪 Testing Gemini Configuration
+----------------------------------------
+
+1️⃣  Testing Simple Generation (gemini-2.5-flash)...
+✅ Success: Hello World
+
+2️⃣  Testing Search Tool (googleSearchRetrieval)...
+❌ Failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] google_search_retrieval is not supported. Please use google_search tool instead.
+
+3️⃣  Testing Search Tool (googleSearch)...
+✅ Success: Here is the latest breaking news in Brazil today, January 30, 2026:
+
+A 13-year-old boy was tragically killed in a shark attack off Chifre beach on Brazil's eastern coast, in the tourist hotspot of Pernambuco. Authorities had issued shark warnings for dozens of beaches in the area. In other news, federal police have arrested a suspect with alleged Islamic State ties, accused of preparing a suicide attack, which has shifted Brazil's national narrative towards risk management and security capabilities. Brazil's Central Bank has maintained its benchmark interest rate at 15% per annum. Additionally, there are reports of legal setbacks for the Belo Monte hydropower plant in the Amazon due to unmet environmental and social requirements.
+
+4️⃣  Testing 1.5-flash + googleSearchRetrieval (Control)...
+❌ Failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
