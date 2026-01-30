@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         const isTest = mpAccessToken.includes('TEST');
         console.log('Payment Request:', {
             isTest: isTest,
-            tokenPrefix: accessToken.substring(0, 5) + '...',
+            tokenPrefix: mpAccessToken.substring(0, 5) + '...',
             packageId,
             amount,
             originalEmail: email
