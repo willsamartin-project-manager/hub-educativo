@@ -14,5 +14,5 @@ export const model = genAI.getGenerativeModel({
 
 export const searchModel = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
-    tools: [{ googleSearch: {} }]
+    tools: [{ googleSearchRetrieval: {} }]
 });
