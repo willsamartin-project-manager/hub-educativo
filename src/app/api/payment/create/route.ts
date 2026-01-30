@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!; // Service role is safer but anon works if using RLS correctly or handling here
-// Ideally we should use SERVICE_ROLE_KEY for admin tasks, but for MVP sticking to existing pattern if possible,
-// OR since we are server-side, we can use a SERVICE_KEY if available.
-// NOTE: For 'transactions' insert, we might need a better key if RLS allows properly.
-// Let's use the provided keys for now.
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// BYPASS SSL CHECK (Local Dev / Corporate Proxy Fix)
+if (process.env.NODE_ENV === 'development') {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
