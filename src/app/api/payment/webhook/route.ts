@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!; // Ideally Service Role Key for writing
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // ADMIN PRIVILEGES
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
