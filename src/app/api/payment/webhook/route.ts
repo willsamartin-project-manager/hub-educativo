@@ -2,13 +2,12 @@ import { Payment, MercadoPagoConfig } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // ADMIN PRIVILEGES
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
-
 export async function POST(req: Request) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
+
     try {
         const url = new URL(req.url);
         const topic = url.searchParams.get('topic') || url.searchParams.get('type');
@@ -18,13 +17,13 @@ export async function POST(req: Request) {
             // Some notifications come in JSON body
             const body = await req.json().catch(() => ({}));
             if (body.data?.id) {
-                return handlePayment(body.data.id);
+                return handlePayment(body.data.id, client, supabase);
             }
             return NextResponse.json({ message: 'No ID found' }, { status: 200 });
         }
 
         if (topic === 'payment' || topic === 'merchant_order') {
-            return await handlePayment(id);
+            return await handlePayment(id, client, supabase);
         }
 
         return NextResponse.json({ message: 'Ignored' }, { status: 200 });
@@ -35,7 +34,7 @@ export async function POST(req: Request) {
     }
 }
 
-async function handlePayment(paymentId: string) {
+async function handlePayment(paymentId: string, client: any, supabase: any) {
     console.log(`Checking payment: ${paymentId}`);
 
     // 1. Verify with Mercado Pago

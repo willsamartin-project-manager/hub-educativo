@@ -2,19 +2,23 @@ import { Payment, MercadoPagoConfig } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // ADMIN PRIVILEGES
-
-// BYPASS SSL CHECK (Local Dev / Corporate Proxy Fix)
-if (process.env.NODE_ENV === 'development') {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
-
 export async function POST(req: Request) {
+    // Initialize clients INSIDE the handler to avoid build-time errors if env vars are missing
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    // Validate keys at runtime
+    if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json({ error: 'Server Misconfiguration: Missing Supabase Keys' }, { status: 500 });
+    }
+
+    // BYPASS SSL CHECK (Local Dev / Corporate Proxy Fix)
+    if (process.env.NODE_ENV === 'development') {
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
     try {
         const { packageId, amount, userId, email, firstName } = await req.json();
 
