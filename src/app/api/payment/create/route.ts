@@ -27,17 +27,22 @@ export async function POST(req: Request) {
 
         const idempotencyKey = `pay_${userId}_${Date.now()}`;
 
+        // PREVENT 'PAYING YOURSELF' ERROR IN SANDBOX
+        // Mercado Pago rejects payments where Payer Email == Merchant Email
+        const isTest = process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith('TEST-');
+        const payerEmail = isTest ? `test_user_${Math.floor(Math.random() * 10000)}@test.com` : (email || 'user@hubeducativo.com');
+
         const paymentData = {
             body: {
                 transaction_amount: Number(amount),
                 description: `Moedas Hub Educativo - Pack ${packageId}`,
                 payment_method_id: 'pix',
                 payer: {
-                    email: email || 'user@hubeducativo.com', // MP requires email
+                    email: payerEmail,
                     first_name: firstName || 'User',
                 },
                 external_reference: userId, // Useful to track who bought
-                notification_url: `https://hub-educativo.vercel.app/api/payment/webhook` // REPLACE WITH YOUR VERCEL URL
+                notification_url: `https://hub-educativo.vercel.app/api/payment/webhook`
             },
             requestOptions: { idempotencyKey }
         };
