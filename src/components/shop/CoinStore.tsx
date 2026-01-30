@@ -17,6 +17,9 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
     const [cpf, setCpf] = useState('')
     const [showCpfInput, setShowCpfInput] = useState(false)
     const [selectedPkg, setSelectedPkg] = useState<any>(null)
+    const [qrCodeData, setQrCodeData] = useState<{ code: string, base64: string, id: string } | null>(null)
+    const [copied, setCopied] = useState(false)
+    const [status, setStatus] = useState<'waiting' | 'paid'>('waiting')
 
     // Helper to format CPF
     const formatCPF = (value: string) => {
