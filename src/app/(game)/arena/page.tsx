@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, memo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Brain, Check, Loader2, Play, Trophy, X } from 'lucide-react'
 import Link from 'next/link'
@@ -22,7 +22,23 @@ export default function ArenaPage() {
 }
 
 function ArenaContent() {
-    const { status, currentQuestionIndex, deck, score, startGame, answerQuestion, resetGame, restartGame, mode, subject, grade, appendQuestions, lives } = useGameStore((state: any) => state)
+    // SELECTORS: Granular selection to prevent unnecessary re-renders
+    const status = useGameStore(state => state.status)
+    const currentQuestionIndex = useGameStore(state => state.currentQuestionIndex)
+    const deck = useGameStore(state => state.deck)
+    const score = useGameStore(state => state.score)
+    const mode = useGameStore(state => state.mode)
+    const subject = useGameStore(state => state.subject)
+    const grade = useGameStore(state => state.grade)
+    const lives = useGameStore(state => state.lives)
+
+    // Actions rarely change, but good to act effectively
+    const startGame = useGameStore(state => state.startGame)
+    const answerQuestion = useGameStore(state => state.answerQuestion)
+    const resetGame = useGameStore(state => state.resetGame)
+    const restartGame = useGameStore(state => state.restartGame)
+    const appendQuestions = useGameStore(state => state.appendQuestions)
+
     const currentQuestion = deck[currentQuestionIndex]
 
     const searchParams = useSearchParams()
@@ -30,15 +46,13 @@ function ArenaContent() {
     const [isLoadingDeck, setIsLoadingDeck] = useState(false)
 
     // Marathon Mode Controller
-    // Monitors progress and fetches more questions if needed
     useEffect(() => {
         if (mode !== 'marathon' || status !== 'playing') return
 
-        const thresholds = [deck.length - 3, deck.length - 1] // Fetch when 3 left, retry when 1 left
+        const thresholds = [deck.length - 3, deck.length - 1]
         const shouldFetch = thresholds.includes(currentQuestionIndex)
 
         const fetchMore = async () => {
-            // Avoid fetching if we already have plenty
             if (deck.length - currentQuestionIndex > 5) return
 
             console.log('Marathon Mode: Fetching more questions...')
@@ -68,7 +82,6 @@ function ArenaContent() {
 
 
     useEffect(() => {
-        // If coming from Library with a specific deck ID, load it instantly
         const loadDeck = async () => {
             if (!deckId) return
 
@@ -76,7 +89,6 @@ function ArenaContent() {
             const { data } = await supabase.from('decks').select('*').eq('id', deckId).single()
 
             if (data && data.questions) {
-                // Determine if this is a Marathon deck request (optional) or just force standard
                 startGame(data.questions, deckId, 'standard', data.subject, data.grade)
             }
             setIsLoadingDeck(false)
@@ -90,7 +102,7 @@ function ArenaContent() {
     }
 
     if (status === 'idle') {
-        return <LobbyScreen onStart={(newDeck, newDeckId, mode, subject, grade) => startGame(newDeck, newDeckId, mode, subject, grade)} />
+        return <LobbyScreen onStart={startGame} />
     }
 
     return (
@@ -126,7 +138,7 @@ function ArenaContent() {
                 <AnimatePresence mode="wait">
                     {status === 'playing' && currentQuestion && (
                         <QuestionView
-                            key={currentQuestion.id}
+                            key={currentQuestion.id} // Essential for animation
                             question={currentQuestion}
                             onAnswer={answerQuestion}
                             index={currentQuestionIndex + 1}
@@ -143,22 +155,21 @@ function ArenaContent() {
     )
 }
 
-function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, mode: 'standard' | 'marathon', subject: string, grade: string) => void }) {
+// MEMOIZED COMPONENT
+const LobbyScreen = memo(function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, mode: any, subject: string, grade: string) => void }) {
     const [isLoading, setIsLoading] = useState(false)
     const [userId, setUserId] = useState<string | null>(null)
     const [selectedGrade, setSelectedGrade] = useState('Ensino Médio')
     const [selectedMode, setSelectedMode] = useState<'standard' | 'marathon'>('standard')
 
-    // Fetch User ID on mount
     const fetchUser = async () => {
-        const { supabase } = await import('@/lib/supabase') // Dynamic import to avoid SSR issues if any
+        const { supabase } = await import('@/lib/supabase')
         const { data } = await supabase.auth.getUser()
         if (data.user) {
             setUserId(data.user.id)
         }
     }
 
-    // Call fetchUser once
     if (!userId) fetchUser()
 
     const { play } = useSound()
@@ -183,14 +194,12 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, 
                 body: JSON.stringify({
                     subject,
                     grade: selectedGrade,
-                    userId: userId, // Sending User ID for billing
-                    // In future we might send 'mode' to bill differently
+                    userId: userId,
                 })
             })
             const data = await res.json()
 
             if (!res.ok) {
-                // Show specific error from server (e.g. Saldo Insuficiente)
                 alert(`Erro: ${data.error || 'Falha ao criar deck'}`)
                 return
             }
@@ -198,7 +207,6 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, 
             if (data.deck && data.deckId) {
                 onStart(data.deck, data.deckId, selectedMode, subject, selectedGrade)
             } else {
-                // Handle legacy/error
                 alert('Erro ao gerar deck (ID ausente).')
             }
         } catch (e) {
@@ -293,25 +301,27 @@ function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, 
             </div>
         </div>
     )
-}
+})
 
-function QuestionView({ question, onAnswer, index, total, mode }: any) {
+// MEMOIZED COMPONENT
+const QuestionView = memo(function QuestionView({ question, onAnswer, index, total, mode }: any) {
     const [selected, setSelected] = useState<number | null>(null)
     const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
     const [showFeedback, setShowFeedback] = useState(false)
 
-    // Hooks (Only declare once!)
-    const { play } = useSound()
-    const { success, error, light } = useHaptic()
-    const { nextQuestion, status, resetGame } = useGameStore((state: any) => state)
+    // Selectors for specific actions to avoid passing full store
+    const nextQuestion = useGameStore(state => state.nextQuestion)
+    const playSound = useSound().play
+    const haptic = useHaptic() // Haptic might be stable, but hooks are cheap
 
-    const handleSelect = async (idx: number) => {
-        if (selected !== null) return // Block multiple clicks
+    // Callback optimization
+    const handleSelect = useCallback(async (idx: number) => {
+        if (selected !== null) return
+
         setSelected(idx)
-        play('click')
-        light()
+        playSound('click')
+        haptic.light()
 
-        // Short pause for tension
         await new Promise(resolve => setTimeout(resolve, 500))
 
         const res = onAnswer(idx)
@@ -319,24 +329,26 @@ function QuestionView({ question, onAnswer, index, total, mode }: any) {
         setShowFeedback(true)
 
         if (res === 'correct') {
-            play('correct')
-            success()
+            playSound('correct')
+            haptic.success()
         } else {
-            play('wrong')
-            error()
+            playSound('wrong')
+            haptic.error()
         }
-    }
+    }, [selected, onAnswer, playSound, haptic]) // Dependencies
 
-    const handleNext = () => {
+    const handleNext = useCallback(() => {
         nextQuestion()
-    }
+    }, [nextQuestion])
 
     return (
         <motion.div
             className="w-full max-w-2xl"
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }} // More subtle scale for mobile perf
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, x: -50 }}
+            exit={{ opacity: 0, x: -20 }} // Lesser movement
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{ willChange: 'opacity, transform' }} // Hardware acceleration hint
         >
             <div className="text-center mb-8">
                 <span className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
@@ -356,12 +368,13 @@ function QuestionView({ question, onAnswer, index, total, mode }: any) {
                     return (
                         <motion.button
                             key={i}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }} // Reduced distance
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
+                            transition={{ delay: i * 0.05, duration: 0.2 }} // Faster stagger
                             onClick={() => handleSelect(i)}
                             disabled={selected !== null}
                             className={`w-full p-4 rounded-xl border text-left font-medium transition-all duration-300 relative overflow-hidden group ${stateClass}`}
+                            style={{ willChange: 'transform' }} // Hint
                         >
                             <span className="opacity-50 mr-4 font-mono">{String.fromCharCode(65 + i)}</span>
                             {opt}
@@ -370,11 +383,10 @@ function QuestionView({ question, onAnswer, index, total, mode }: any) {
                 })}
             </div>
 
-            {/* Explanation / Feedback Card */}
             <AnimatePresence>
                 {showFeedback && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="mt-6 p-6 bg-card border border-border rounded-2xl shadow-2xl"
                     >
@@ -395,10 +407,12 @@ function QuestionView({ question, onAnswer, index, total, mode }: any) {
             </AnimatePresence>
         </motion.div>
     )
-}
+})
 
-function ResultView({ status, score, onReset, onRestart }: any) {
-    const { deckId, deck } = useGameStore((state: any) => state)
+// MEMOIZED COMPONENT
+const ResultView = memo(function ResultView({ status, score, onReset, onRestart }: any) {
+    const deckId = useGameStore(state => state.deckId)
+    const deckLength = useGameStore(state => state.deck.length)
     const [isSaving, setIsSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const { play } = useSound()
@@ -413,7 +427,8 @@ function ResultView({ status, score, onReset, onRestart }: any) {
                 particleCount: 150,
                 spread: 70,
                 origin: { y: 0.6 },
-                colors: ['#FFD700', '#FFA500', '#ffffff']
+                colors: ['#FFD700', '#FFA500', '#ffffff'],
+                disableForReducedMotion: true // Accessibility/Perf
             })
         } else if (status === 'lost') {
             play('lose')
@@ -421,7 +436,6 @@ function ResultView({ status, score, onReset, onRestart }: any) {
     }, [status, play])
 
     useEffect(() => {
-        // Auto-save match on mount
         const saveMatch = async () => {
             if (saved || !deckId) return
             setIsSaving(true)
@@ -434,7 +448,7 @@ function ResultView({ status, score, onReset, onRestart }: any) {
                     user_id: user.id,
                     deck_id: deckId,
                     score: score,
-                    max_score: deck.length * 100
+                    max_score: deckLength * 100
                 })
                 setSaved(true)
             } else {
@@ -444,13 +458,14 @@ function ResultView({ status, score, onReset, onRestart }: any) {
         }
 
         saveMatch()
-    }, []) // Run once on mount
+    }, [])
 
     return (
         <motion.div
             className="text-center space-y-6"
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
         >
             <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-2xl ${status === 'won' ? 'bg-green-500 text-white shadow-green-500/50' : 'bg-red-500 text-white shadow-red-500/50'}`}>
                 {status === 'won' ? <Trophy className="w-10 h-10" /> : <X className="w-10 h-10" />}
@@ -493,4 +508,4 @@ function ResultView({ status, score, onReset, onRestart }: any) {
             </div>
         </motion.div>
     )
-}
+})
