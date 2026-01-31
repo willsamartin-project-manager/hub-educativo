@@ -98,9 +98,7 @@ export default function ChallengeClient({ id }: { id: string }) {
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--color-purple-500)_0%,_transparent_50%)] opacity-20" />
 
 
-            // ... (imports)
 
-            // ... (inside component)
 
             <div className="w-full max-w-lg bg-card border border-purple-500/20 rounded-3xl p-8 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom duration-700 relative">
                 {/* Close Button */}
