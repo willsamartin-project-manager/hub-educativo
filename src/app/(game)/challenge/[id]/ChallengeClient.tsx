@@ -37,8 +37,25 @@ export default function ChallengeClient({ id }: { id: string }) {
         fetchChallenge();
     }, [id]);
 
-    const handleAccept = () => {
-        if (!challenge) return;
+    const handleAccept = async () => {
+        if (!challenge || !user) return;
+
+        // Notify server that user is joining (for Live Leaderboard)
+        try {
+            await fetch('/api/challenge/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    challengeId: challenge.id,
+                    userId: user.id,
+                    deckId: challenge.deck.id,
+                    maxScore: challenge.deck.questions.length * 100
+                })
+            });
+        } catch (e) {
+            console.error("Failed to join challenge:", e);
+        }
+
         startGame(
             challenge.deck.questions,
             challenge.deck.id,

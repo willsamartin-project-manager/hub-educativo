@@ -441,13 +441,43 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
             const { data: { user } } = await supabase.auth.getUser()
 
             if (user) {
-                const { error } = await supabase.from('matches').insert({
-                    user_id: user.id,
-                    deck_id: deckId,
-                    score: score,
-                    max_score: deckLength * 100,
-                    challenge_id: useGameStore.getState().challengeId
-                })
+                // If in challenge mode, check for existing placeholder match to update
+                let matchIdToUpdate = null;
+                const challengeId = useGameStore.getState().challengeId;
+
+                if (challengeId) {
+                    const { data: existing } = await supabase
+                        .from('matches')
+                        .select('id')
+                        .eq('challenge_id', challengeId)
+                        .eq('user_id', user.id)
+                        .maybeSingle(); // Use maybeSingle to avoid 406 on multiple
+
+                    if (existing) matchIdToUpdate = existing.id;
+                }
+
+                let error;
+                if (matchIdToUpdate) {
+                    // Update existing
+                    const { error: updateError } = await supabase
+                        .from('matches')
+                        .update({
+                            score: score,
+                            played_at: new Date().toISOString() // Update time
+                        })
+                        .eq('id', matchIdToUpdate);
+                    error = updateError;
+                } else {
+                    // Insert new (Standard game or no placeholder found)
+                    const { error: insertError } = await supabase.from('matches').insert({
+                        user_id: user.id,
+                        deck_id: deckId,
+                        score: score,
+                        max_score: deckLength * 100,
+                        challenge_id: challengeId
+                    });
+                    error = insertError;
+                }
 
                 if (error) {
                     console.error('Failed to save match:', error)
