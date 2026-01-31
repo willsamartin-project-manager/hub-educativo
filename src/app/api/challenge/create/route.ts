@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { NextResponse } from 'next/server';
+
 import { createClient } from '@supabase/supabase-js';
 
 // Use Service Role Key to bypass RLS for server-side operations
