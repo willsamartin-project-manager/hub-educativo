@@ -27,6 +27,12 @@ export default function ChallengeClient({ id }: { id: string }) {
                 if (data.challenge) {
                     setChallenge(data.challenge);
                     setLeaderboard(data.leaderboard);
+
+                    // [DEBUG]
+                    if (data.debug) {
+                        console.log('API Debug:', data.debug);
+                        alert(`API DEBUG:\nBusca ID: ${data.debug.searchId}\nMatches Encontrados: ${data.debug.matchesFound}\nErro: ${JSON.stringify(data.debug.error)}`);
+                    }
                 }
             } catch (error) {
                 console.error(error);

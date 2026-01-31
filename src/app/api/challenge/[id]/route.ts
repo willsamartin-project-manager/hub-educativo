@@ -45,7 +45,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
         return NextResponse.json({
             challenge,
-            leaderboard: matches || []
+            leaderboard: matches || [],
+            debug: {
+                searchId: id,
+                matchesFound: matches?.length || 0,
+                error: matchesError
+            }
         });
 
     } catch (e) {
