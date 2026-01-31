@@ -107,11 +107,8 @@ function ArenaContent() {
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
-            {/* Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-full -z-10">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[120px] rounded-full" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full" />
-            </div>
+            {/* Ambient Background - Optimized */}
+            <div className="absolute top-0 left-0 w-full h-full -z-10 bg-[radial-gradient(circle_at_top,_var(--color-primary)_0%,_transparent_40%)] opacity-20" />
 
             {/* Header */}
             <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 backdrop-blur-md z-10">
@@ -517,18 +514,33 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
             {status === 'won' && !mode && deckId && (
                 <div className="flex flex-col items-center gap-2 pt-2">
                     <button
-                        onClick={async () => {
+                        disabled={isSaving} // Reuse isSaving or create new one
+                        onClick={async (e) => {
+                            const btn = e.currentTarget;
+                            if (btn.disabled) return;
+                            btn.disabled = true;
+                            btn.innerHTML = '<span class="animate-spin">⏳</span> Criando...';
+
                             if (!deckId) return;
                             try {
                                 const { supabase } = await import('@/lib/supabase');
                                 const { data: { user } } = await supabase.auth.getUser();
-                                if (!user) return alert('Faça login para desafiar amigos!');
+
+                                if (!user) {
+                                    alert('Faça login para desafiar amigos!');
+                                    btn.disabled = false;
+                                    btn.innerHTML = 'Desafiar Amigo';
+                                    return;
+                                }
 
                                 const res = await fetch('/api/challenge/create', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ deckId, userId: user.id })
                                 });
+
+                                if (!res.ok) throw new Error('Falha na API');
+
                                 const data = await res.json();
                                 if (data.challengeId) {
                                     const link = `${window.location.origin}/challenge/${data.challengeId}`;
@@ -537,10 +549,13 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                                 }
                             } catch (error) {
                                 console.error(error);
-                                alert('Erro ao criar desafio.');
+                                alert('Erro ao criar desafio. Tente novamente.');
+                            } finally {
+                                btn.disabled = false;
+                                btn.innerHTML = '<svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg> Desafiar Amigo';
                             }
                         }}
-                        className="flex items-center gap-2 px-6 py-3 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded-xl font-bold hover:bg-purple-600/30 transition-all"
+                        className="flex items-center gap-2 px-6 py-3 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded-xl font-bold hover:bg-purple-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Trophy className="w-4 h-4" />
                         Desafiar Amigo
