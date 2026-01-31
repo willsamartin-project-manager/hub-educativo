@@ -58,6 +58,16 @@ export default function ChallengeClient({ id }: { id: string }) {
         </div>
     );
 
+    if (!challenge.deck) return (
+        <div className="min-h-screen flex items-center justify-center bg-black text-white">
+            <div className="text-center space-y-4">
+                <h1 className="text-2xl font-bold">Baralho não disponível 🚫</h1>
+                <p className="text-gray-400">O baralho deste desafio parece ter sido removido.</p>
+                <Link href="/" className="text-purple-400 hover:underline">Voltar ao Início</Link>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-background">
             {/* Background */}
