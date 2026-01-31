@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Gamepad2, Loader2, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -17,6 +17,7 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null)
 
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -27,7 +28,9 @@ export default function LoginPage() {
             if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({ email, password })
                 if (error) throw error
-                router.push('/hub')
+                if (error) throw error
+                const next = searchParams.get('next')
+                router.push(next || '/hub')
             } else {
                 const { error } = await supabase.auth.signUp({
                     email,
