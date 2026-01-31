@@ -22,7 +22,7 @@ export default function ChallengeClient({ id }: { id: string }) {
                 const { data: { user } } = await supabase.auth.getUser();
                 setUser(user);
 
-                const res = await fetch(`/api/challenge/${id}`);
+                const res = await fetch(`/api/challenge/${id}`, { cache: 'no-store' });
                 const data = await res.json();
                 if (data.challenge) {
                     setChallenge(data.challenge);

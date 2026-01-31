@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic'; // Ensure no caching
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
