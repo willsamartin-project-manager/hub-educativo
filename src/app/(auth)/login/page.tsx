@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Gamepad2, Loader2, Sparkles } from 'lucide-react'
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function LoginPage() {
+function LoginForm() {
     const [isLogin, setIsLogin] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const [email, setEmail] = useState('')
@@ -27,7 +27,6 @@ export default function LoginPage() {
         try {
             if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({ email, password })
-                if (error) throw error
                 if (error) throw error
                 const next = searchParams.get('next')
                 router.push(next || '/hub')
@@ -179,5 +178,17 @@ export default function LoginPage() {
                 </motion.div>
             </div>
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     )
 }
