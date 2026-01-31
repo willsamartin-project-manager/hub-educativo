@@ -96,13 +96,13 @@ export default function HubPage() {
                     <p className="text-muted-foreground">Pronto para conquistar mais conhecimento hoje?</p>
                 </div>
                 <Link
-                    href="/arena"
+                    href="/decks"
                     className="group px-6 py-4 bg-primary text-primary-foreground rounded-2xl font-bold text-lg shadow-[0_0_30px_-10px_var(--color-primary)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 w-fit"
                 >
                     <div className="p-2 bg-white/20 rounded-full">
-                        <Play className="w-5 h-5 fill-current" />
+                        <BookOpen className="w-5 h-5 fill-current" />
                     </div>
-                    Jogar Agora
+                    Meus Decks
                 </Link>
             </div>
 
@@ -143,7 +143,6 @@ export default function HubPage() {
                 <section className="space-y-4">
                     <div className="flex items-center justify-between text-sm">
                         <h2 className="font-bold text-lg">Sugestões da IA</h2>
-                        <Link href="/arena" className="text-xs border px-2 py-1 rounded hover:bg-white/5">Novo Deck</Link>
                     </div>
 
                     <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 relative overflow-hidden group">
