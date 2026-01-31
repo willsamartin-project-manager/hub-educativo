@@ -132,6 +132,18 @@ export default function ChallengeClient({ id }: { id: string }) {
                             <Sword className="w-5 h-5" />
                         </button>
                     )}
+
+                    {/* Presenter Mode Button (Only for Creator) */}
+                    {user && challenge.creator_id === user.id && (
+                        <Link
+                            href={`/challenge/${id}/live`}
+                            target="_blank"
+                            className="block w-full py-3 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white font-bold rounded-xl transition-all text-center border border-white/10 hover:border-white/30 flex items-center justify-center gap-2"
+                        >
+                            <Trophy className="w-4 h-4" />
+                            Modo TV / Projetor (Ao Vivo)
+                        </Link>
+                    )}
                 </div>
 
                 {/* Leaderboard Preview */}
