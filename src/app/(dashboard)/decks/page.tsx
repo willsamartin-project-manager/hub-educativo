@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, CalendarDays, Gamepad2, Loader2, Play, Search, Trash2 } from 'lucide-react'
+import { BookOpen, CalendarDays, Gamepad2, Loader2, Play, Search, Trash2, Swords } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
@@ -20,6 +20,7 @@ type Deck = {
 export default function DecksPage() {
     const [decks, setDecks] = useState<Deck[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [creatingChallengeId, setCreatingChallengeId] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchDecks = async () => {
@@ -38,6 +39,40 @@ export default function DecksPage() {
 
         fetchDecks()
     }, [])
+
+    const handleCreateChallenge = async (e: React.MouseEvent, deckId: string) => {
+        e.preventDefault() // Prevent navigation to Arena
+        e.stopPropagation()
+
+        setCreatingChallengeId(deckId)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                alert("Faça login para criar desafios!")
+                return
+            }
+
+            const res = await fetch('/api/challenge/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deckId, userId: user.id })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erro ao criar desafio');
+
+            if (data.challengeId) {
+                const link = `${window.location.origin}/challenge/${data.challengeId}`;
+                await navigator.clipboard.writeText(link);
+                alert('⚔️ Desafio Criado! Link copiado para a área de transferência.');
+            }
+        } catch (error: any) {
+            console.error(error)
+            alert(error.message || "Falha ao criar desafio")
+        } finally {
+            setCreatingChallengeId(null)
+        }
+    }
 
     if (isLoading) {
         return (
@@ -115,8 +150,22 @@ export default function DecksPage() {
                                         </div>
                                     </div>
 
-                                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                        <Play className="w-4 h-4 fill-current ml-0.5" />
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => handleCreateChallenge(e, deck.id)}
+                                            disabled={creatingChallengeId === deck.id}
+                                            className="w-10 h-10 rounded-full bg-secondary/80 hover:bg-purple-600 hover:text-white flex items-center justify-center transition-all duration-300 border border-border group/btn relative z-20"
+                                            title="Criar Desafio PvP"
+                                        >
+                                            {creatingChallengeId === deck.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Swords className="w-4 h-4 text-purple-400 group-hover/btn:text-white transition-colors" />
+                                            )}
+                                        </button>
+                                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <Play className="w-4 h-4 fill-current ml-0.5" />
+                                        </div>
                                     </div>
                                 </div>
                             </Link>
