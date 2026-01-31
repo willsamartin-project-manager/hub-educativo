@@ -38,7 +38,19 @@ export default function HubPage() {
                 setRecentDecks(decks || []);
 
                 // Active Battles (Created by user OR Played by user)
-                // Note: Complex query simplified for MVP: fetch created by me first
+
+                // 1. Get IDs of challenges I played
+                const { data: myMatches } = await supabase
+                    .from('matches')
+                    .select('challenge_id')
+                    .eq('user_id', user.id)
+                    .not('challenge_id', 'is', null);
+
+                const playedChallengeIds = myMatches?.map(m => m.challenge_id) || [];
+                const allRelevantChallengeIds = [...playedChallengeIds];
+
+                // 2. Fetch Challenges (Created by me OR Played by me)
+                // We use .or() with explicit ID filter to combine both conditions safely
                 const { data: myBattles } = await supabase
                     .from('challenges')
                     .select(`
@@ -46,7 +58,7 @@ export default function HubPage() {
                         creator:profiles!creator_id(full_name),
                         deck:decks!deck_id(subject)
                     `)
-                    .or(`creator_id.eq.${user.id}`) // For now just created by me to be safe with valid RLS
+                    .or(`creator_id.eq.${user.id},id.in.(${allRelevantChallengeIds.join(',')})`)
                     .order('created_at', { ascending: false })
                     .limit(3);
 
