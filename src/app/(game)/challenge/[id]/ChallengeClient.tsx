@@ -12,9 +12,16 @@ export default function ChallengeClient({ id }: { id: string }) {
     const startGame = useGameStore(state => state.startGame);
     const router = useRouter();
 
+    const [user, setUser] = useState<any>(null);
+
     useEffect(() => {
         const fetchChallenge = async () => {
             try {
+                // Check Auth first
+                const { supabase } = await import('@/lib/supabase');
+                const { data: { user } } = await supabase.auth.getUser();
+                setUser(user);
+
                 const res = await fetch(`/api/challenge/${id}`);
                 const data = await res.json();
                 if (data.challenge) {
@@ -105,13 +112,26 @@ export default function ChallengeClient({ id }: { id: string }) {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleAccept}
-                        className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_-5px_var(--color-purple-600)] flex items-center justify-center gap-2"
-                    >
-                        ACEITAR DESAFIO
-                        <ArrowRight className="w-5 h-5" />
-                    </button>
+                    {!user ? (
+                        <div className="space-y-2">
+                            <Link
+                                href={`/login?next=/challenge/${id}`}
+                                className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2"
+                            >
+                                Fazer Login para Aceitar
+                                <ArrowRight className="w-5 h-5" />
+                            </Link>
+                            <p className="text-xs text-center text-muted-foreground">É necessário ter uma conta para registrar sua pontuação.</p>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleAccept}
+                            className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_-5px_var(--color-purple-600)] flex items-center justify-center gap-2"
+                        >
+                            ACEITAR DESAFIO
+                            <Sword className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Leaderboard Preview */}
