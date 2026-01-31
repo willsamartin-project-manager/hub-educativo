@@ -15,42 +15,54 @@ export default function HubPage() {
     useEffect(() => {
         const getData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                // Profile
-                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-                setProfile(profile);
+            if (!user) {
+                setLoading(false);
+                return;
+            }
 
-                // Stats: Decks Count
-                const { count: decksCount } = await supabase.from('decks').select('*', { count: 'exact', head: true }).eq('owner_id', user.id);
+            try {
+                // Parallel Fetching: Start all independent requests simultaneously
+                const [
+                    profileResponse,
+                    decksCountResponse,
+                    matchesResponse,
+                    recentDecksResponse,
+                    myMatchesResponse
+                ] = await Promise.all([
+                    // 1. Profile
+                    supabase.from('profiles').select('*').eq('id', user.id).single(),
+                    // 2. Stats: Decks Count
+                    supabase.from('decks').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
+                    // 3. Stats: Matches & Score (Optimization: .select('score') is lighter)
+                    supabase.from('matches').select('score').eq('user_id', user.id),
+                    // 4. Recent Decks
+                    supabase.from('decks').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(3),
+                    // 5. My Matches (to find challenges I played)
+                    supabase.from('matches').select('challenge_id').eq('user_id', user.id).not('challenge_id', 'is', null)
+                ]);
 
-                // Stats: Matches & Score
-                const { data: matches } = await supabase.from('matches').select('score').eq('user_id', user.id);
+                // Process Results
+                const profile = profileResponse.data;
+                const decksCount = decksCountResponse.count;
+                const matches = matchesResponse.data;
                 const totalScore = matches?.reduce((acc, curr) => acc + (curr.score || 0), 0) || 0;
+                const decks = recentDecksResponse.data;
+                const myMatches = myMatchesResponse.data;
 
+                // Set Independent States
+                setProfile(profile);
                 setStats({
                     decks: decksCount || 0,
                     score: totalScore,
                     matches: matches?.length || 0
                 });
-
-                // Recent Decks
-                const { data: decks } = await supabase.from('decks').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(3);
                 setRecentDecks(decks || []);
 
-                // Active Battles (Created by user OR Played by user)
+                // Active Battles Logic (Depends on myMatches)
+                const playedChallengeIds = myMatches?.map((m: any) => m.challenge_id) || [];
+                // Use Set to deduplicate if needed, though map lookup is fast for filtered list
 
-                // 1. Get IDs of challenges I played
-                const { data: myMatches } = await supabase
-                    .from('matches')
-                    .select('challenge_id')
-                    .eq('user_id', user.id)
-                    .not('challenge_id', 'is', null);
-
-                const playedChallengeIds = myMatches?.map(m => m.challenge_id) || [];
-                const allRelevantChallengeIds = [...playedChallengeIds];
-
-                // 2. Fetch Challenges (Created by me OR Played by me)
-                // We use .or() with explicit ID filter to combine both conditions safely
+                // Fetch Challenges (Created by me OR Played by me)
                 const { data: myBattles } = await supabase
                     .from('challenges')
                     .select(`
@@ -58,13 +70,17 @@ export default function HubPage() {
                         creator:profiles!creator_id(full_name),
                         deck:decks!deck_id(subject)
                     `)
-                    .or(`creator_id.eq.${user.id},id.in.(${allRelevantChallengeIds.join(',')})`)
+                    .or(`creator_id.eq.${user.id},id.in.(${playedChallengeIds.join(',')})`)
                     .order('created_at', { ascending: false })
                     .limit(3);
 
                 setBattles(myBattles || []);
+
+            } catch (error) {
+                console.error("Dashboard Load Error:", error);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         }
         getData();
     }, []);
