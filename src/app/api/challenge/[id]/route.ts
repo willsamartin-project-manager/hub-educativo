@@ -34,7 +34,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
             .select(`
                 score,
                 user:profiles!user_id(full_name, avatar_url),
-                created_at
+                played_at
             `)
             .eq('challenge_id', id)
             .order('score', { ascending: false });
@@ -45,12 +45,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
         return NextResponse.json({
             challenge,
-            leaderboard: matches || [],
-            debug: {
-                searchId: id,
-                matchesFound: matches?.length || 0,
-                error: matchesError
-            }
+            leaderboard: matches || []
         });
 
     } catch (e) {
