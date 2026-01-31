@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
         if (error) {
             console.error('Error creating challenge:', error);
-            return NextResponse.json({ error: 'Failed to create challenge' }, { status: 500 });
+            return NextResponse.json({ error: error.message || 'Failed to create challenge', details: error }, { status: 500 });
         }
 
         return NextResponse.json({ challengeId: data.id });
