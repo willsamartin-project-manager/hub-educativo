@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useGameStore } from '@/lib/store';
-import { ArrowRight, Brain, Loader2, Sword, Trophy } from 'lucide-react';
+import { ArrowRight, Brain, Loader2, Sword, Trophy, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ChallengeClient({ id }: { id: string }) {
@@ -97,7 +97,7 @@ export default function ChallengeClient({ id }: { id: string }) {
             {/* Background */}
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--color-purple-500)_0%,_transparent_50%)] opacity-20" />
 
-            import {ArrowRight, Brain, Loader2, Sword, Trophy, X} from 'lucide-react';
+
             // ... (imports)
 
             // ... (inside component)
