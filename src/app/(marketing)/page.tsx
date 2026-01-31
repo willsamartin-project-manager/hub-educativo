@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Brain, Gamepad2, Sparkles } from "lucide-react";
+import { ArrowRight, Brain, Sparkles } from "lucide-react";
 import { DailyDeckCard } from "@/components/marketing/DailyDeckCard";
 
 export default function LandingPage() {
@@ -65,13 +65,6 @@ export default function LandingPage() {
                             >
                                 Começar Agora
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link
-                                href="#demo"
-                                className="px-8 py-3.5 rounded-xl font-semibold border border-border/50 hover:bg-white/5 transition-colors flex items-center gap-2"
-                            >
-                                <Gamepad2 className="w-4 h-4 text-muted-foreground" />
-                                Ver Demo
                             </Link>
                         </div>
                     </div>

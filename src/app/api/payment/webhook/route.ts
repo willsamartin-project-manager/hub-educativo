@@ -1,12 +1,16 @@
+```typescript
 import { Payment, MercadoPagoConfig } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
+    // Initialize clients INSIDE the handler
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN!;
+
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
+    const client = new MercadoPagoConfig({ accessToken: mpAccessToken });
 
     try {
         const url = new URL(req.url);
@@ -35,7 +39,7 @@ export async function POST(req: Request) {
 }
 
 async function handlePayment(paymentId: string, client: any, supabase: any) {
-    console.log(`Checking payment: ${paymentId}`);
+    console.log(`Checking payment: ${ paymentId } `);
 
     // 1. Verify with Mercado Pago
     const payment = new Payment(client);
@@ -81,6 +85,8 @@ async function handlePayment(paymentId: string, client: any, supabase: any) {
 
         if (rpcError) {
             console.error('Failed to add coins:', rpcError);
+            // Even if coin add failed, we might want to log it but not fail the webhook to avoid MP retrying forever?
+            // But strict consistency says fail 500 so MP retries.
             return NextResponse.json({ error: 'Failed to add coins' }, { status: 500 });
         }
 

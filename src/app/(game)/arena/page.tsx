@@ -448,7 +448,8 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                     user_id: user.id,
                     deck_id: deckId,
                     score: score,
-                    max_score: deckLength * 100
+                    max_score: deckLength * 100,
+                    challenge_id: useGameStore.getState().challengeId // [NEW] Link to challenge
                 })
                 setSaved(true)
             } else {
@@ -485,6 +486,22 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                 <div className="text-4xl font-mono font-bold text-primary">R$ {score.toLocaleString()}</div>
             </div>
 
+            {/* Challenge Leaderboard (If in challenge mode) */}
+            {useGameStore.getState().challengeId && (
+                <div className="max-w-sm mx-auto mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                    <h3 className="text-sm font-bold text-purple-400 mb-2 flex items-center gap-2 justify-center">
+                        <Trophy className="w-4 h-4" /> Ranking do Desafio
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-3">Veja como você se saiu contra seus amigos</p>
+                    <Link
+                        href={`/challenge/${useGameStore.getState().challengeId}`}
+                        className="text-xs font-bold text-white bg-purple-600 px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                        Ver Placar Completo
+                    </Link>
+                </div>
+            )}
+
             {/* Guest CTA */}
             {isGuest && mode === 'daily' && (
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 max-w-sm mx-auto animate-in slide-in-from-bottom fade-in duration-700">
@@ -493,6 +510,42 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                     <Link href="/login?mode=signup" className="block w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold shadow-lg hover:scale-105 transition-transform">
                         Criar Conta Grátis
                     </Link>
+                </div>
+            )}
+
+            {/* Challenge Friend Button */}
+            {status === 'won' && !mode && deckId && (
+                <div className="flex flex-col items-center gap-2 pt-2">
+                    <button
+                        onClick={async () => {
+                            if (!deckId) return;
+                            try {
+                                const { supabase } = await import('@/lib/supabase');
+                                const { data: { user } } = await supabase.auth.getUser();
+                                if (!user) return alert('Faça login para desafiar amigos!');
+
+                                const res = await fetch('/api/challenge/create', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ deckId, userId: user.id })
+                                });
+                                const data = await res.json();
+                                if (data.challengeId) {
+                                    const link = `${window.location.origin}/challenge/${data.challengeId}`;
+                                    await navigator.clipboard.writeText(link);
+                                    alert('Link de desafio copiado para a área de transferência! Envie para seu amigo.');
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                alert('Erro ao criar desafio.');
+                            }
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded-xl font-bold hover:bg-purple-600/30 transition-all"
+                    >
+                        <Trophy className="w-4 h-4" />
+                        Desafiar Amigo
+                    </button>
+                    <p className="text-xs text-muted-foreground">Quem fizer mais pontos ganha!</p>
                 </div>
             )}
 

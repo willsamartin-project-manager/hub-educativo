@@ -19,13 +19,14 @@ type GameState = {
     }
     deck: Question[]
     deckId: string | null
+    challengeId?: string | null // [NEW]
     mode: 'standard' | 'marathon' | 'daily'
     subject: string
     grade: string
     lives: number
 
     // Actions
-    startGame: (deck: Question[], deckId: string, mode?: 'standard' | 'marathon' | 'daily', subject?: string, grade?: string) => void
+    startGame: (deck: Question[], deckId: string, mode?: 'standard' | 'marathon' | 'daily', subject?: string, grade?: string, challengeId?: string | null) => void
     answerQuestion: (index: number) => 'correct' | 'wrong'
     nextQuestion: () => void
     appendQuestions: (questions: Question[]) => void
@@ -44,15 +45,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
     deck: [],
     deckId: null,
+    challengeId: null, // [NEW] Track active challenge
     mode: 'standard',
     subject: '',
     grade: '',
     lives: 3,
 
-    startGame: (deck, deckId, mode = 'standard', subject = '', grade = '') => set({
+    startGame: (deck, deckId, mode = 'standard', subject = '', grade = '', challengeId = null) => set({
         status: 'playing',
         deck,
         deckId,
+        challengeId, // [NEW]
         mode,
         subject,
         grade,
