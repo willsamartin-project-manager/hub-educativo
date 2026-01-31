@@ -441,14 +441,20 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
             const { data: { user } } = await supabase.auth.getUser()
 
             if (user) {
-                await supabase.from('matches').insert({
+                const { error } = await supabase.from('matches').insert({
                     user_id: user.id,
                     deck_id: deckId,
                     score: score,
                     max_score: deckLength * 100,
-                    challenge_id: useGameStore.getState().challengeId // [NEW] Link to challenge
+                    challenge_id: useGameStore.getState().challengeId
                 })
-                setSaved(true)
+
+                if (error) {
+                    console.error('Failed to save match:', error)
+                    alert(`Erro ao salvar pontuação: ${error.message}`)
+                } else {
+                    setSaved(true)
+                }
             } else {
                 setIsGuest(true)
             }
