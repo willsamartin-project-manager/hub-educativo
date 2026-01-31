@@ -110,79 +110,79 @@ export default function HubPage() {
                     </div>
                 </section>
 
-            </section>
 
-            <section className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                    <h2 className="font-bold text-lg">Sugestões da IA</h2>
-                    <Link href="/arena" className="text-xs border px-2 py-1 rounded hover:bg-white/5">Novo Deck</Link>
-                </div>
 
-                <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <h3 className="font-bold text-xl mb-2">Desafio Inicial</h3>
-                        <p className="text-sm text-muted-foreground mb-4">Que tal começar testando seus conhecimentos gerais?</p>
-                        <Link href="/arena" className="inline-block px-4 py-2 bg-primary/20 hover:bg-primary text-primary hover:text-white rounded-lg text-sm font-bold transition-colors">
-                            Gerar Deck
-                        </Link>
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between text-sm">
+                        <h2 className="font-bold text-lg">Sugestões da IA</h2>
+                        <Link href="/arena" className="text-xs border px-2 py-1 rounded hover:bg-white/5">Novo Deck</Link>
                     </div>
-                    <SparklesIcon className="absolute top-4 right-4 w-24 h-24 text-primary/5 group-hover:text-primary/10 transition-colors rotate-12" />
-                </div>
-            </section>
-        </div>
-            
-            {/* Active Battles Section - Option C Implementation */ }
-    {
-        battles.length > 0 && (
-            <section className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                        <h2 className="font-bold text-lg">Duelos Recentes</h2>
-                        <span className="bg-purple-500/10 text-purple-400 text-xs px-2 py-0.5 rounded-full border border-purple-500/20 font-mono">PVP</span>
+
+                    <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <h3 className="font-bold text-xl mb-2">Desafio Inicial</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Que tal começar testando seus conhecimentos gerais?</p>
+                            <Link href="/arena" className="inline-block px-4 py-2 bg-primary/20 hover:bg-primary text-primary hover:text-white rounded-lg text-sm font-bold transition-colors">
+                                Gerar Deck
+                            </Link>
+                        </div>
+                        <SparklesIcon className="absolute top-4 right-4 w-24 h-24 text-primary/5 group-hover:text-primary/10 transition-colors rotate-12" />
                     </div>
-                    <Link href="/profile" className="text-muted-foreground hover:text-white transition-colors text-xs">Ver histórico</Link>
-                </div>
+                </section>
+            </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
-                    {battles.map((battle: any) => (
-                        <Link
-                            key={battle.id}
-                            href={`/challenge/${battle.id}`}
-                            className="bg-card hover:bg-purple-500/5 group border border-border/50 hover:border-purple-500/30 p-4 rounded-xl transition-all relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <div className="w-16 h-16 bg-purple-500 rounded-full blur-2xl" />
+            {/* Active Battles Section - Option C Implementation */}
+            {
+                battles.length > 0 && (
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-bold text-lg">Duelos Recentes</h2>
+                                <span className="bg-purple-500/10 text-purple-400 text-xs px-2 py-0.5 rounded-full border border-purple-500/20 font-mono">PVP</span>
                             </div>
-                            <div className="flex justify-between items-start mb-3">
-                                <div>
-                                    <div className="font-bold text-sm truncate max-w-[150px]">{battle.deck?.subject || 'Desafio'}</div>
-                                    <div className="text-xs text-muted-foreground">{new Date(battle.created_at).toLocaleDateString()}</div>
-                                </div>
-                                {battle.creator_id === profile?.id ? (
-                                    <div className="text-[10px] uppercase font-bold bg-white/5 px-2 py-1 rounded text-muted-foreground">Você criou</div>
-                                ) : (
-                                    <div className="text-[10px] uppercase font-bold bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Desafiado</div>
-                                )}
-                            </div>
+                            <Link href="/profile" className="text-muted-foreground hover:text-white transition-colors text-xs">Ver histórico</Link>
+                        </div>
 
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <div className="flex -space-x-2">
-                                    <div className="w-6 h-6 rounded-full bg-gray-800 border-2 border-background flex items-center justify-center text-[10px] font-bold">
-                                        {battle.creator?.full_name?.[0] || '?'}
+                        <div className="grid md:grid-cols-3 gap-4">
+                            {battles.map((battle: any) => (
+                                <Link
+                                    key={battle.id}
+                                    href={`/challenge/${battle.id}`}
+                                    className="bg-card hover:bg-purple-500/5 group border border-border/50 hover:border-purple-500/30 p-4 rounded-xl transition-all relative overflow-hidden"
+                                >
+                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <div className="w-16 h-16 bg-purple-500 rounded-full blur-2xl" />
                                     </div>
-                                    <div className="w-6 h-6 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary">
-                                        Vs
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <div className="font-bold text-sm truncate max-w-[150px]">{battle.deck?.subject || 'Desafio'}</div>
+                                            <div className="text-xs text-muted-foreground">{new Date(battle.created_at).toLocaleDateString()}</div>
+                                        </div>
+                                        {battle.creator_id === profile?.id ? (
+                                            <div className="text-[10px] uppercase font-bold bg-white/5 px-2 py-1 rounded text-muted-foreground">Você criou</div>
+                                        ) : (
+                                            <div className="text-[10px] uppercase font-bold bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Desafiado</div>
+                                        )}
                                     </div>
-                                </div>
-                                <span>Ver placar &rarr;</span>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            </section>
-        )
-    }
-    </div >
+
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <div className="flex -space-x-2">
+                                            <div className="w-6 h-6 rounded-full bg-gray-800 border-2 border-background flex items-center justify-center text-[10px] font-bold">
+                                                {battle.creator?.full_name?.[0] || '?'}
+                                            </div>
+                                            <div className="w-6 h-6 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary">
+                                                Vs
+                                            </div>
+                                        </div>
+                                        <span>Ver placar &rarr;</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )
+            }
+        </div >
     );
 }
 
