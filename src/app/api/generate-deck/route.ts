@@ -22,11 +22,14 @@ export async function POST(request: Request) {
     let grade = 'Ensino Médio';
     let userId = '';
 
+    let cost = 50;
+
     try {
         const body = await request.json();
         if (body.subject) subject = body.subject;
         if (body.grade) grade = body.grade;
         if (body.userId) userId = body.userId;
+        if (typeof body.cost === 'number') cost = body.cost;
 
         if (!userId) {
             return NextResponse.json({ error: 'User ID required' }, { status: 401 });
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
             p_subject: subject,
             p_grade: grade,
             p_questions: finalDeck,
-            p_cost: 50 // Fixed cost for MVP
+            p_cost: cost
         });
 
         if (dbError) {

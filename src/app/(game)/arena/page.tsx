@@ -45,6 +45,17 @@ function ArenaContent() {
     const deckId = searchParams.get('deckId')
     const [isLoadingDeck, setIsLoadingDeck] = useState(false)
 
+    const [userId, setUserId] = useState<string | null>(null);
+
+    // Fetch User ID once on mount
+    useEffect(() => {
+        const getUser = async () => {
+            const { data } = await supabase.auth.getUser();
+            if (data.user) setUserId(data.user.id);
+        };
+        getUser();
+    }, []);
+
     // Marathon Mode Controller
     useEffect(() => {
         if (mode !== 'marathon' || status !== 'playing') return
@@ -54,6 +65,7 @@ function ArenaContent() {
 
         const fetchMore = async () => {
             if (deck.length - currentQuestionIndex > 5) return
+            if (!userId) return; // Wait for user ID
 
             console.log('Marathon Mode: Fetching more questions...')
             try {
@@ -63,7 +75,8 @@ function ArenaContent() {
                     body: JSON.stringify({
                         subject: subject || 'Conhecimentos Gerais',
                         grade: grade || 'Ensino Médio',
-                        userId: 'marathon-refill',
+                        userId: userId,
+                        cost: 0 // Refills are free (covered by entry fee)
                     })
                 })
                 const data = await res.json()
