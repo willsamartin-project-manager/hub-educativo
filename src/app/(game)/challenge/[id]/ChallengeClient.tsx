@@ -97,7 +97,16 @@ export default function ChallengeClient({ id }: { id: string }) {
             {/* Background */}
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--color-purple-500)_0%,_transparent_50%)] opacity-20" />
 
-            <div className="w-full max-w-lg bg-card border border-purple-500/20 rounded-3xl p-8 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom duration-700">
+            import {ArrowRight, Brain, Loader2, Sword, Trophy, X} from 'lucide-react';
+            // ... (imports)
+
+            // ... (inside component)
+
+            <div className="w-full max-w-lg bg-card border border-purple-500/20 rounded-3xl p-8 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom duration-700 relative">
+                {/* Close Button */}
+                <Link href="/hub" className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors">
+                    <X className="w-5 h-5" />
+                </Link>
                 <div className="text-center space-y-4">
                     <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto ring-1 ring-purple-500/50">
                         <Sword className="w-10 h-10 text-purple-500" />
