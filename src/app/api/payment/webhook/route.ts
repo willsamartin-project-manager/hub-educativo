@@ -1,4 +1,4 @@
-```typescript
+
 import { Payment, MercadoPagoConfig } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 }
 
 async function handlePayment(paymentId: string, client: any, supabase: any) {
-    console.log(`Checking payment: ${ paymentId } `);
+    console.log('Checking payment:', paymentId);
 
     // 1. Verify with Mercado Pago
     const payment = new Payment(client);
