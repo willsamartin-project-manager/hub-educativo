@@ -20,3 +20,16 @@ begin
         alter table matches add column challenge_id uuid references challenges(id);
     end if;
 end $$;
+
+-- 4. Ensure RLS is enabled on Matches and add policies
+alter table matches enable row level security;
+
+-- Allow anyone to read matches (for leaderboards)
+drop policy if exists "Public matches are viewable by everyone." on matches;
+create policy "Public matches are viewable by everyone." on matches
+  for select using (true);
+
+-- Allow authenticated users to insert their own matches
+drop policy if exists "Users can insert their own matches." on matches;
+create policy "Users can insert their own matches." on matches
+  for insert with check (auth.uid() = user_id);
