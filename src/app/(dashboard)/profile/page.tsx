@@ -26,7 +26,7 @@ export default function ProfilePage() {
                         challenge:challenges!challenge_id(creator:profiles!creator_id(full_name))
                     `)
                     .eq('user_id', user.id)
-                    .order('created_at', { ascending: false });
+                    .order('played_at', { ascending: false });
 
                 setMatches(history || []);
             }
@@ -75,7 +75,7 @@ export default function ProfilePage() {
                             <div>
                                 <div className="font-bold">{match.deck?.title || match.deck?.subject}</div>
                                 <div className="text-xs text-muted-foreground">
-                                    {new Date(match.created_at).toLocaleDateString()}
+                                    {new Date(match.played_at).toLocaleDateString()}
                                     {match.challenge && ` • Desafio de ${match.challenge.creator?.full_name}`}
                                 </div>
                             </div>
