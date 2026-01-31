@@ -539,15 +539,19 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                                     body: JSON.stringify({ deckId, userId: user.id })
                                 });
 
-                                if (!res.ok) throw new Error('Falha na API');
-
                                 const data = await res.json();
+
+                                if (!res.ok) throw new Error(data.error || 'Falha na API');
+
                                 if (data.challengeId) {
                                     const link = `${window.location.origin}/challenge/${data.challengeId}`;
                                     await navigator.clipboard.writeText(link);
                                     alert('Link de desafio copiado para a área de transferência! Envie para seu amigo.');
                                 }
-                            } catch (error) {
+                            } catch (error: any) {
+                                console.error(error);
+                                alert(`Erro ao criar desafio: ${error.message}`);
+                            } finally {
                                 console.error(error);
                                 alert('Erro ao criar desafio. Tente novamente.');
                             } finally {
