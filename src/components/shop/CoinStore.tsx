@@ -7,11 +7,7 @@ import { useGameStore } from '@/lib/store' // Assuming we might store user info 
 
 // Package Definitions
 const PACKAGES = [
-<<<<<<< HEAD
     { id: 1, price: 1, coins: 100, label: 'Pack Iniciante', color: 'bg-blue-500' },
-=======
-    { id: 1, price: 10, coins: 100, label: 'Pack Iniciante', color: 'bg-blue-500' },
->>>>>>> origin/main
     { id: 2, price: 25, coins: 300, label: 'Pack Popular', color: 'bg-purple-500', popular: true },
     { id: 3, price: 50, coins: 700, label: 'Pack Mestre', color: 'bg-amber-500' }
 ]

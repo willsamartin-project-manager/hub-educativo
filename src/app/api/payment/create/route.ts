@@ -34,10 +34,6 @@ export async function POST(req: Request) {
 
         // LOGGING FOR DEBUGGING
         const isTest = mpAccessToken.includes('TEST');
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
         console.log('Payment Request:', {
             isTest: isTest,
             tokenPrefix: mpAccessToken.substring(0, 5) + '...',
@@ -52,21 +48,6 @@ export async function POST(req: Request) {
 
         const idempotencyKey = `pay_${userId}_${Date.now()}`;
 
-<<<<<<< HEAD
-        // Normal Production-ready Payer Object
-        const payerEmail = email || 'user@hubeducativo.com';
-        console.log('Using Payer Email:', payerEmail);
-
-        // Mercado Pago Production PIX REQUIRES FirstName and CPF
-        const payerInfo: any = {
-            email: payerEmail,
-            first_name: firstName || 'Aluno',
-            identification: {
-                type: 'CPF',
-                number: cpf || '19119119100'
-            }
-        };
-=======
         // PREVENT 'PAYING YOURSELF' ERROR IN SANDBOX
         // We force a random email if it appears to be a test environment
         const payerEmail = isTest
@@ -74,17 +55,12 @@ export async function POST(req: Request) {
             : (email || 'user@hubeducativo.com');
 
         console.log('Using Payer Email:', payerEmail);
->>>>>>> origin/main
 
         const paymentData = {
             body: {
                 transaction_amount: Number(amount),
                 description: `Moedas Hub Educativo - Pack ${packageId}`,
                 payment_method_id: 'pix',
-<<<<<<< HEAD
-                payer: payerInfo,
-                external_reference: userId,
-=======
                 payer: {
                     email: payerEmail,
                     first_name: firstName || 'User',
@@ -96,7 +72,6 @@ export async function POST(req: Request) {
                     }
                 },
                 external_reference: userId, // Useful to track who bought
->>>>>>> origin/main
                 notification_url: `https://hub-educativo.vercel.app/api/payment/webhook`
             },
             requestOptions: { idempotencyKey }
