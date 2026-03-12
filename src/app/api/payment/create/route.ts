@@ -87,9 +87,10 @@ export async function POST(req: Request) {
         // Determine coins based on amount (Primitive protection)
         // Ideally look up packageId in DB, but for MVP:
         const coinsMap: Record<number, number> = {
-            10: 100,
-            25: 300,
-            50: 700
+            1: 100,  // Test pack
+            10: 100, // Pack Iniciante
+            25: 300, // Pack Popular
+            50: 700  // Pack Mestre
         };
         const coins = coinsMap[Number(amount)] || Math.floor(Number(amount) * 10);
 

@@ -49,13 +49,25 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
     // Polling logic
     useEffect(() => {
         let interval: NodeJS.Timeout
-        if (qrCodeData && status === 'waiting') {
+        if (qrCodeData?.id && status === 'waiting') {
             interval = setInterval(async () => {
-                // In a real app, subscribe to Supabase Realtime 'transactions' table for instant update
-                // For MVP, simplistic check:
-                // We'll skip check for now or assume user clicks "I paid" to force refresh 
-                // OR we could check an endpoint. 
-                // Let's implement a 'check-status' logic if meaningful.
+                try {
+                    const { supabase } = await import('@/lib/supabase')
+                    const { data, error } = await supabase
+                        .from('transactions')
+                        .select('status')
+                        .eq('provider_id', qrCodeData.id)
+                        .maybeSingle()
+
+                    if (data?.status === 'approved') {
+                        setStatus('paid')
+                        clearInterval(interval)
+                        // Trigger a small confetti or just a nice transition
+                        import('canvas-confetti').then(confetti => confetti.default())
+                    }
+                } catch (e) {
+                    console.error('Polling error:', e)
+                }
             }, 3000)
         }
         return () => clearInterval(interval)
@@ -167,6 +179,26 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                                     Cancelar
                                 </button>
                             </div>
+                        ) : status === 'paid' ? (
+                            <div className="flex flex-col items-center py-10 animate-in fade-in zoom-in-95">
+                                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/20">
+                                    <Check className="w-10 h-10 text-white" strokeWidth={3} />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Pagamento Confirmado!</h3>
+                                <p className="text-muted-foreground text-center mb-8">
+                                    Suas moedas já foram adicionadas à sua conta.
+                                    Divirta-se jogando!
+                                </p>
+                                <button
+                                    onClick={() => { onClose(); setQrCodeData(null); }}
+                                    className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors font-medium"
+                                >
+                                    Fechar Loja
+                                </button>
+                                <p className="text-[10px] text-muted-foreground mt-6 uppercase tracking-widest opacity-50">
+                                    Esta janela fechará sozinha em instantes...
+                                </p>
+                            </div>
                         ) : qrCodeData ? (
                             <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
                                 <div className="text-sm font-bold text-green-400 mb-4 bg-green-400/10 px-3 py-1 rounded-full border border-green-400/20">
@@ -195,7 +227,15 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                                 <p className="text-xs text-center text-muted-foreground mb-4">
                                     Após pagar, suas moedas cairão automaticamente em alguns instantes.
                                 </p>
-                                <button onClick={() => setQrCodeData(null)} className="text-sm text-primary hover:underline">
+                                <button
+                                    onClick={() => {
+                                        setStatus('waiting');
+                                    }}
+                                    className="text-xs text-primary hover:underline"
+                                >
+                                    Já paguei, verificar agora
+                                </button>
+                                <button onClick={() => setQrCodeData(null)} className="text-sm text-yellow-500 hover:underline mt-4">
                                     Voltar para pacotes
                                 </button>
                             </div>
@@ -231,6 +271,7 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                     </div>
                 </motion.div>
             </motion.div>
+        )}
         </AnimatePresence>
     )
 }

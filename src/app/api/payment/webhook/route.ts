@@ -65,19 +65,21 @@ async function handlePayment(paymentId: string, client: any, supabase: any) {
     // For now, let's assume provider_id was saved.
 
     if (paymentData.status === 'approved') {
-        const coinsMap: Record<number, number> = {
-            10: 100,
-            25: 300,
-            50: 700
-        };
-        const coinsToAdd = coinsMap[Number(transaction_amount)] || Math.floor(Number(transaction_amount) * 10);
+        // [LOCK] Check if already processed or if the transaction exists
+        if (!transaction) {
+            console.error('Transaction not found in DB for approved payment:', paymentId);
+            return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+        }
 
-        // Check if already processed
-        if (transaction && transaction.status === 'approved') {
+        if (transaction.status === 'approved') {
+            console.log('Payment already processed for:', paymentId);
             return NextResponse.json({ message: 'Already processed' }, { status: 200 });
         }
 
-        // 3. Add Coins (RPC)
+        const coinsToAdd = transaction.coins;
+        console.log(`Adding ${coinsToAdd} coins to user ${userId}`);
+
+        // 3. Add Coins (RPC - Security Definer)
         const { error: rpcError } = await supabase.rpc('add_coins', {
             user_id: userId,
             coins_to_add: coinsToAdd
@@ -85,23 +87,16 @@ async function handlePayment(paymentId: string, client: any, supabase: any) {
 
         if (rpcError) {
             console.error('Failed to add coins:', rpcError);
-            // Even if coin add failed, we might want to log it but not fail the webhook to avoid MP retrying forever?
-            // But strict consistency says fail 500 so MP retries.
             return NextResponse.json({ error: 'Failed to add coins' }, { status: 500 });
         }
 
-        // 4. Update Transaction Status
-        // We do this AFTER adding coins to ensure we don't mark as done if coin add failed (though RPC is atomic usually)
-        if (transaction) {
-            await supabase
-                .from('transactions')
-                .update({ status: 'approved' })
-                .eq('id', transaction.id);
-        } else {
-            // Fallback: Create interaction if it didn't exist (e.g. came from outside app?)
-            // Not likely in this flow.
-            console.warn('Transaction not found in DB for approved payment:', paymentId);
-        }
+        // 4. Update Transaction Status (Mark as processed)
+        await supabase
+            .from('transactions')
+            .update({ status: 'approved' })
+            .eq('id', transaction.id);
+
+        console.log('Payment success and coins added for:', paymentId);
     } else {
         // Update status (rejected, pending, etc)
         if (transaction) {
