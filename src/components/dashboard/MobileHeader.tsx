@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Gamepad2, Plus, Sparkles } from "lucide-react";
-import { CoinStore } from "@/components/shop/CoinStore";
+import dynamic from "next/dynamic";
+
+const CoinStore = dynamic(() => import("@/components/shop/CoinStore").then(mod => mod.CoinStore), {
+    ssr: false
+});
 
 interface MobileHeaderProps {
     profile: {

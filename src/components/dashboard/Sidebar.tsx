@@ -1,11 +1,16 @@
 'use client'
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Gamepad2, LayoutDashboard, Library, LogOut, Settings, Trophy, User, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { CoinStore } from "@/components/shop/CoinStore";
+
+const CoinStore = dynamic(() => import("@/components/shop/CoinStore").then(mod => mod.CoinStore), {
+    ssr: false,
+    loading: () => <div className="h-20 bg-primary/5 animate-pulse rounded-xl" />
+});
 
 interface SidebarProps {
     profile: {
