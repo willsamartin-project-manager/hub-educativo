@@ -1,9 +1,7 @@
-import { LayoutDashboard, Library, Trophy, User } from "lucide-react";
-import Link from "next/link";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileHeader } from "@/components/dashboard/MobileHeader";
+import { MobileNav } from "@/components/dashboard/MobileNav";
 import { createClient } from "@/lib/supabase-server";
-import { memo } from "react";
 
 export default async function DashboardLayout({
     children,
@@ -43,30 +41,8 @@ export default async function DashboardLayout({
                 </div>
             </main>
 
-            {/* Mobile Nav - Fixed bottom for better reachability */}
-            <nav className="md:hidden fixed bottom-0 w-full h-16 bg-card/80 backdrop-blur-lg border-t border-border flex items-center justify-around z-50 px-2 pb-safe">
-                <MobileNavItem href="/hub" icon={<LayoutDashboard size={20} />} />
-                <MobileNavItem href="/arena" icon={<Trophy size={20} />} highlight />
-                <MobileNavItem href="/decks" icon={<Library size={20} />} />
-                <MobileNavItem href="/profile" icon={<User size={20} />} />
-            </nav>
+            {/* Mobile Nav - Client side active states */}
+            <MobileNav />
         </div>
     );
 }
-
-const MobileNavItem = memo(({ href, icon, highlight }: any) => {
-    return (
-        <Link
-            href={href}
-            prefetch={true}
-            className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all active:scale-90 ${highlight
-                ? 'bg-primary/10 text-primary shadow-[0_0_20px_-5px_rgba(var(--color-primary),0.3)]'
-                : 'text-muted-foreground/60'
-                }`}
-        >
-            {icon}
-        </Link>
-    );
-});
-
-MobileNavItem.displayName = 'MobileNavItem';
