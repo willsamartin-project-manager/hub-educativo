@@ -138,7 +138,15 @@ function LoginForm() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Senha</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Senha</label>
+                                <Link
+                                    href="/auth/forgot-password"
+                                    className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter"
+                                >
+                                    Esqueci minha senha
+                                </Link>
+                            </div>
                             <input
                                 type="password"
                                 value={password}

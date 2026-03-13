@@ -6,12 +6,22 @@ import { Loader2, Shield, User, Edit2, Check, X, Camera, Image as ImageIcon } fr
 import { motion, AnimatePresence } from "framer-motion";
 
 const PRESET_AVATARS = [
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Buddy",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Cookie",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Daisy",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Ginger",
+    { name: "Médico", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Doctor" },
+    { name: "Astronauta", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Astro" },
+    { name: "Professor", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher" },
+    { name: "Cientista", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Caleb" },
+    { name: "Artista", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Joni" },
+    { name: "Engenheiro", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max" },
+    { name: "Chef", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver" },
+    { name: "Programador", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Caden" },
+    { name: "Bombeiro", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=George" },
+    { name: "Policial", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo" },
+];
+
+const GRADE_OPTIONS = [
+    "6º ano", "7º ano", "8º ano", "9º ano",
+    "1º ano", "2º ano", "3º ano",
+    "Pré-vestibular", "Concurso"
 ];
 
 export default function ProfilePage() {
@@ -22,6 +32,7 @@ export default function ProfilePage() {
     const [saving, setSaving] = useState(false);
     const [fullName, setFullName] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
+    const [grade, setGrade] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -32,6 +43,7 @@ export default function ProfilePage() {
                 setProfile(profile);
                 setFullName(profile?.full_name || "");
                 setAvatarUrl(profile?.avatar_url || "");
+                setGrade(profile?.grade || "Ensino Médio");
 
                 const { data: history } = await supabase
                     .from('matches')
@@ -60,12 +72,13 @@ export default function ProfilePage() {
                 .from('profiles')
                 .update({
                     full_name: fullName,
-                    avatar_url: avatarUrl
+                    avatar_url: avatarUrl,
+                    grade: grade
                 })
                 .eq('id', user.id);
 
             if (error) throw error;
-            setProfile({ ...profile, full_name: fullName, avatar_url: avatarUrl });
+            setProfile({ ...profile, full_name: fullName, avatar_url: avatarUrl, grade: grade });
             setIsEditing(false);
         } catch (error) {
             console.error(error);
@@ -176,15 +189,36 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Escolha um Avatar</label>
-                                    <div className="grid grid-cols-6 gap-3">
-                                        {PRESET_AVATARS.map((url, i) => (
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Série / Nível</label>
+                                    <select
+                                        value={grade}
+                                        onChange={(e) => setGrade(e.target.value)}
+                                        className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors text-lg font-medium cursor-pointer"
+                                    >
+                                        {GRADE_OPTIONS.map(opt => (
+                                            <option key={opt} value={opt}>{opt}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 block">Escolha um Ícone de Profissão</label>
+                                    <div className="grid grid-cols-5 md:grid-cols-11 gap-2">
+                                        <button
+                                            onClick={() => setAvatarUrl("")}
+                                            className={`aspect-square rounded-xl border-2 transition-all flex items-center justify-center ${!avatarUrl ? 'border-primary ring-2 ring-primary/20 bg-primary/10' : 'border-dashed border-white/20 bg-secondary/50 hover:bg-secondary'}`}
+                                            title="Sem Avatar"
+                                        >
+                                            <User className="w-5 h-5 text-muted-foreground" />
+                                        </button>
+                                        {PRESET_AVATARS.map((avatar, i) => (
                                             <button
                                                 key={i}
-                                                onClick={() => setAvatarUrl(url)}
-                                                className={`aspect-square rounded-xl border-2 transition-all overflow-hidden hover:scale-105 active:scale-95 ${avatarUrl === url ? 'border-primary ring-2 ring-primary/20 bg-primary/10' : 'border-transparent bg-secondary'}`}
+                                                onClick={() => setAvatarUrl(avatar.url)}
+                                                className={`aspect-square rounded-xl border-2 transition-all overflow-hidden hover:scale-105 active:scale-95 ${avatarUrl === avatar.url ? 'border-primary ring-2 ring-primary/20 bg-primary/10' : 'border-transparent bg-secondary'}`}
+                                                title={avatar.name}
                                             >
-                                                <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover" />
+                                                <img src={avatar.url} alt={avatar.name} className="w-full h-full object-cover" />
                                             </button>
                                         ))}
                                     </div>
@@ -203,6 +237,7 @@ export default function ProfilePage() {
                                             setIsEditing(false);
                                             setFullName(profile?.full_name || "");
                                             setAvatarUrl(profile?.avatar_url || "");
+                                            setGrade(profile?.grade || "Ensino Médio");
                                         }}
                                         disabled={saving}
                                         className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-secondary text-foreground px-6 py-3 rounded-xl font-bold hover:bg-secondary/80 transition-all"
@@ -216,7 +251,9 @@ export default function ProfilePage() {
                             <>
                                 <div>
                                     <h2 className="text-3xl font-bold truncate">{profile?.full_name || 'Estudante'}</h2>
-                                    <p className="text-muted-foreground font-medium opacity-70">{profile?.email}</p>
+                                    <p className="text-muted-foreground font-medium opacity-70">
+                                        {profile?.email} • <span className="text-primary">{profile?.grade || 'Série não definida'}</span>
+                                    </p>
                                 </div>
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
                                     <div className="flex items-center gap-2 text-sm bg-primary/10 px-4 py-2 rounded-2xl text-primary font-bold border border-primary/20">
