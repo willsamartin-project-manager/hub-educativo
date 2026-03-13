@@ -72,8 +72,19 @@ export default function DecksPage() {
                     url: link
                 };
 
-                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-                    await navigator.share(shareData);
+                // Desktop usually fails or has a poor experience with navigator.share
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (isMobile && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err: any) {
+                        // If it's not a user cancelation, fallback to WhatsApp
+                        if (err.name !== 'AbortError') {
+                            const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + link)}`;
+                            window.open(waUrl, '_blank');
+                        }
+                    }
                 } else {
                     const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + link)}`;
                     window.open(waUrl, '_blank');
