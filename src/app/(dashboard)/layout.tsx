@@ -1,6 +1,7 @@
 import { Gamepad2, LayoutDashboard, Library, Settings, Trophy, User } from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { MobileHeader } from "@/components/dashboard/MobileHeader";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -53,12 +54,7 @@ export default async function DashboardLayout({
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto h-[100dvh] pb-20 md:pb-0">
-                <header className="h-16 border-b border-border/50 flex items-center justify-between px-6 bg-background/50 backdrop-blur-sm sticky top-0 z-10 md:hidden">
-                    <Gamepad2 className="w-6 h-6 text-primary" />
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center font-bold text-xs">
-                        {profile?.full_name?.[0] || 'U'}
-                    </div>
-                </header>
+                <MobileHeader profile={profile} />
                 <div className="p-4 lg:p-10 max-w-7xl mx-auto mb-16 md:mb-0">
                     {children}
                 </div>
