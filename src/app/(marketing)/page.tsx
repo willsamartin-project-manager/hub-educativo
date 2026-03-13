@@ -127,25 +127,28 @@ export default function LandingPage() {
 
                         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                             <PriceCard
-                                title="Aprendiz"
-                                price="R$ 0"
-                                features={["Gere 1 deck por dia", "Acesso ao Desafio do Dia", "Ranking Básico"]}
-                                buttonText="Começar Grátis"
+                                title="Pack Iniciante"
+                                price="R$ 4,90"
+                                coins="100 Moedas"
+                                features={["Acesso total aos decks", "Duelos ilimitados", "Evolução de Perfil"]}
+                                buttonText="Comprar Agora"
                                 href="/login?mode=signup"
                             />
                             <PriceCard
-                                title="Estudante Pro"
-                                price="R$ 19,90"
-                                features={["Decks Ilimitados", "Modo Maratona Liberado", "Suporte Prioritário", "Sem Anúncios"]}
+                                title="Pack Popular"
+                                price="R$ 12,90"
+                                coins="300 Moedas"
+                                features={["Melhor para começar", "Bônus progressivo", "Acesso Premium", "Sem interrupções"]}
                                 highlight
-                                buttonText="Assinar Agora"
+                                buttonText="Mais Vendido"
                                 href="/login?mode=signup"
                             />
                             <PriceCard
-                                title="Mestre"
-                                price="R$ 49,90"
-                                features={["Tudo do Pro", "Mentoria IA Ilimitada", "Relatórios de Desempenho", "Cards Premium"]}
-                                buttonText="Comprar Pacote"
+                                title="Pack Mestre"
+                                price="R$ 24,90"
+                                coins="700 Moedas"
+                                features={["Máximo custo-benefício", "Estude sem limites", "Relatórios de IA", "Suporte VIP"]}
+                                buttonText="Levar Melhor Pack"
                                 href="/login?mode=signup"
                             />
                         </div>
@@ -178,7 +181,7 @@ function StepCard({ number, title, description, color = "bg-primary", icon }: an
     )
 }
 
-function PriceCard({ title, price, features, highlight = false, buttonText, href }: any) {
+function PriceCard({ title, price, coins, features, highlight = false, buttonText, href }: any) {
     return (
         <div className={cn(
             "p-8 rounded-3xl border transition-all flex flex-col gap-6",
@@ -188,7 +191,8 @@ function PriceCard({ title, price, features, highlight = false, buttonText, href
         )}>
             <div className="space-y-1">
                 <h3 className="font-bold text-xl">{title}</h3>
-                <div className="text-3xl font-bold">{price}<span className="text-sm font-normal opacity-70"> /mês</span></div>
+                <div className="text-sm font-bold text-primary-foreground/70 uppercase tracking-widest">{coins}</div>
+                <div className="text-3xl font-bold">{price}</div>
             </div>
             <ul className="space-y-3 flex-1">
                 {features.map((f: string, i: number) => (
