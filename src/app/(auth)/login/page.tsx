@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Gamepad2, Loader2, Sparkles } from 'lucide-react'
@@ -14,10 +14,16 @@ function LoginForm() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
+    const [referralCode, setReferralCode] = useState('')
     const [error, setError] = useState<string | null>(null)
 
     const router = useRouter()
     const searchParams = useSearchParams()
+
+    useEffect(() => {
+        const ref = searchParams.get('ref')
+        if (ref) setReferralCode(ref)
+    }, [searchParams])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -35,7 +41,10 @@ function LoginForm() {
                     email,
                     password,
                     options: {
-                        data: { full_name: name }
+                        data: {
+                            full_name: name,
+                            referral_code: referralCode.trim().toUpperCase()
+                        }
                     }
                 })
                 if (error) throw error
@@ -121,6 +130,17 @@ function LoginForm() {
                                             <option>Concurso</option>
                                         </select>
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Código de Indicação (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={referralCode}
+                                        onChange={(e) => setReferralCode(e.target.value)}
+                                        className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono uppercase"
+                                        placeholder="EX: ABCD12"
+                                    />
                                 </div>
                             </div>
                         )}

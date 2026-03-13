@@ -7,9 +7,9 @@ import { useGameStore } from '@/lib/store' // Assuming we might store user info 
 
 // Package Definitions
 const PACKAGES = [
-    { id: 1, price: 1, coins: 100, label: 'Pack Iniciante', color: 'bg-blue-500' },
-    { id: 2, price: 25, coins: 300, label: 'Pack Popular', color: 'bg-purple-500', popular: true },
-    { id: 3, price: 50, coins: 700, label: 'Pack Mestre', color: 'bg-amber-500' }
+    { id: 1, price: 4.90, coins: 100, label: 'Pack Iniciante', color: 'bg-blue-500' },
+    { id: 2, price: 12.90, coins: 300, label: 'Pack Popular', color: 'bg-purple-500', popular: true },
+    { id: 3, price: 24.90, coins: 700, label: 'Pack Mestre', color: 'bg-amber-500' }
 ]
 
 export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
@@ -262,7 +262,7 @@ export function CoinStore({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
                                                 </div>
                                             </div>
                                             <div className="text-xl font-bold font-mono">
-                                                R$ {pkg.price},00
+                                                R$ {pkg.price.toFixed(2).replace('.', ',')}
                                             </div>
                                         </button>
                                     ))}
