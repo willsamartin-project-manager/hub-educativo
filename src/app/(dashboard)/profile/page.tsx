@@ -6,23 +6,19 @@ import { Loader2, Shield, User, Edit2, Check, X, Camera, Image as ImageIcon } fr
 import { motion, AnimatePresence } from "framer-motion";
 
 const PRESET_AVATARS = [
-    { name: "Médico", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Doctor" },
-    { name: "Astronauta", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Astro" },
-    { name: "Professor", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher" },
-    { name: "Cientista", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Caleb" },
-    { name: "Artista", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Joni" },
-    { name: "Engenheiro", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max" },
-    { name: "Chef", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver" },
-    { name: "Programador", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Caden" },
-    { name: "Bombeiro", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=George" },
-    { name: "Policial", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo" },
+    { name: "Médico", url: "https://api.dicebear.com/7.x/personas/svg?seed=Doctor" },
+    { name: "Astronauta", url: "https://api.dicebear.com/7.x/personas/svg?seed=Astro" },
+    { name: "Professor", url: "https://api.dicebear.com/7.x/personas/svg?seed=Teacher" },
+    { name: "Cientista", url: "https://api.dicebear.com/7.x/personas/svg?seed=Science" },
+    { name: "Artista", url: "https://api.dicebear.com/7.x/personas/svg?seed=Artist" },
+    { name: "Engenheiro", url: "https://api.dicebear.com/7.x/personas/svg?seed=Engineer" },
+    { name: "Chef", url: "https://api.dicebear.com/7.x/personas/svg?seed=Chef" },
+    { name: "Programador", url: "https://api.dicebear.com/7.x/personas/svg?seed=Coder" },
+    { name: "Bombeiro", url: "https://api.dicebear.com/7.x/personas/svg?seed=Fireman" },
+    { name: "Policial", url: "https://api.dicebear.com/7.x/personas/svg?seed=Officer" },
 ];
 
-const GRADE_OPTIONS = [
-    "6º ano", "7º ano", "8º ano", "9º ano",
-    "1º ano", "2º ano", "3º ano",
-    "Pré-vestibular", "Concurso"
-];
+const GRADE_OPTIONS = ["Ensino Médio", "Fundamental II", "Concurso"];
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
@@ -202,12 +198,11 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 block">Escolha um Ícone de Profissão</label>
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 block">Escolha seu avatar</label>
                                     <div className="grid grid-cols-5 md:grid-cols-11 gap-2">
                                         <button
                                             onClick={() => setAvatarUrl("")}
                                             className={`aspect-square rounded-xl border-2 transition-all flex items-center justify-center ${!avatarUrl ? 'border-primary ring-2 ring-primary/20 bg-primary/10' : 'border-dashed border-white/20 bg-secondary/50 hover:bg-secondary'}`}
-                                            title="Sem Avatar"
                                         >
                                             <User className="w-5 h-5 text-muted-foreground" />
                                         </button>
@@ -216,9 +211,8 @@ export default function ProfilePage() {
                                                 key={i}
                                                 onClick={() => setAvatarUrl(avatar.url)}
                                                 className={`aspect-square rounded-xl border-2 transition-all overflow-hidden hover:scale-105 active:scale-95 ${avatarUrl === avatar.url ? 'border-primary ring-2 ring-primary/20 bg-primary/10' : 'border-transparent bg-secondary'}`}
-                                                title={avatar.name}
                                             >
-                                                <img src={avatar.url} alt={avatar.name} className="w-full h-full object-cover" />
+                                                <img src={avatar.url} alt={`Avatar ${i}`} className="w-full h-full object-cover" />
                                             </button>
                                         ))}
                                     </div>
