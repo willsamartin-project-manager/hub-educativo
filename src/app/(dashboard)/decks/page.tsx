@@ -21,6 +21,8 @@ export default function DecksPage() {
     const [decks, setDecks] = useState<Deck[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [creatingChallengeId, setCreatingChallengeId] = useState<string | null>(null)
+    const [showShareModal, setShowShareModal] = useState(false)
+    const [lastCreatedLink, setLastCreatedLink] = useState('')
 
     useEffect(() => {
         const fetchDecks = async () => {
@@ -63,32 +65,9 @@ export default function DecksPage() {
 
             if (data.challengeId) {
                 const link = `${window.location.origin}/challenge/${data.challengeId}`;
+                setLastCreatedLink(link);
                 await navigator.clipboard.writeText(link);
-
-                // Native Share or WhatsApp fallback
-                const shareData = {
-                    title: 'Desafio PvP - Hub Educativo',
-                    text: 'Te desafio para uma batalha de conhecimentos! Aceita?',
-                    url: link
-                };
-
-                // Desktop usually fails or has a poor experience with navigator.share
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-                if (isMobile && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-                    try {
-                        await navigator.share(shareData);
-                    } catch (err: any) {
-                        // If it's not a user cancelation, fallback to WhatsApp
-                        if (err.name !== 'AbortError') {
-                            const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + link)}`;
-                            window.open(waUrl, '_blank');
-                        }
-                    }
-                } else {
-                    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + link)}`;
-                    window.open(waUrl, '_blank');
-                }
+                setShowShareModal(true);
             }
         } catch (error: any) {
             console.error(error)
@@ -97,6 +76,32 @@ export default function DecksPage() {
             setCreatingChallengeId(null)
         }
     }
+
+    const handleShare = async () => {
+        if (!lastCreatedLink) return;
+
+        const shareData = {
+            title: 'Desafio PvP - Hub Educativo',
+            text: 'Te desafio para uma batalha de conhecimentos! Aceita?',
+            url: lastCreatedLink
+        };
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            try {
+                await navigator.share(shareData);
+            } catch (err: any) {
+                if (err.name !== 'AbortError') {
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + lastCreatedLink)}`;
+                    window.open(waUrl, '_blank');
+                }
+            }
+        } else {
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + lastCreatedLink)}`;
+            window.open(waUrl, '_blank');
+        }
+    };
 
     if (isLoading) {
         return (
@@ -198,6 +203,51 @@ export default function DecksPage() {
                 </div>
             )
             }
+
+            {/* Share Modal */}
+            <AnimatePresence>
+                {showShareModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-card border border-border/50 rounded-3xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] rounded-full -translate-y-1/2 translate-x-1/2" />
+
+                            <div className="relative z-10 text-center space-y-6">
+                                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto ring-4 ring-primary/10">
+                                    <Swords className="w-10 h-10 text-primary" />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-bold">Desafio Criado! ⚔️</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        O link foi copiado. Agora é só enviar para o seu oponente e começar a batalha!
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={handleShare}
+                                        className="w-full flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-4 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
+                                    >
+                                        <Share2 className="w-5 h-5" />
+                                        Compartilhar Agora
+                                    </button>
+                                    <button
+                                        onClick={() => setShowShareModal(false)}
+                                        className="w-full py-4 rounded-2xl text-muted-foreground font-medium hover:bg-white/5 transition-colors"
+                                    >
+                                        Fechar
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div >
     )
 }
