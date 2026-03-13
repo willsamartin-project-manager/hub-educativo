@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, CalendarDays, Gamepad2, Loader2, Play, Search, Trash2, Swords, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
