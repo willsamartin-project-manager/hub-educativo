@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, CalendarDays, Gamepad2, Loader2, Play, Search, Trash2, Swords } from 'lucide-react'
+import { BookOpen, CalendarDays, Gamepad2, Loader2, Play, Search, Trash2, Swords, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
@@ -64,7 +64,20 @@ export default function DecksPage() {
             if (data.challengeId) {
                 const link = `${window.location.origin}/challenge/${data.challengeId}`;
                 await navigator.clipboard.writeText(link);
-                alert('⚔️ Desafio Criado! Link copiado para a área de transferência.');
+
+                // Native Share or WhatsApp fallback
+                const shareData = {
+                    title: 'Desafio PvP - Hub Educativo',
+                    text: 'Te desafio para uma batalha de conhecimentos! Aceita?',
+                    url: link
+                };
+
+                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                } else {
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + " " + link)}`;
+                    window.open(waUrl, '_blank');
+                }
             }
         } catch (error: any) {
             console.error(error)

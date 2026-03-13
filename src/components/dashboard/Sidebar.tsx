@@ -24,9 +24,10 @@ export function Sidebar({ profile, email }: SidebarProps) {
 
     const handleLogout = async () => {
         setIsLoadingLogout(true);
+        // Clear local storage if any specific session items exist to feel instant
         await supabase.auth.signOut();
-        router.refresh();
-        router.push('/login');
+        // Use window.location for a full clean redirect to login
+        window.location.href = '/login';
     };
 
     const coins = profile?.coins ?? 0;
@@ -45,7 +46,7 @@ export function Sidebar({ profile, email }: SidebarProps) {
                     <NavItem href="/hub" icon={<LayoutDashboard />} label="Dashboard" active={pathname === '/hub'} />
                     <NavItem href="/arena" icon={<Trophy />} label="Jogar" active={pathname === '/arena'} highlight />
                     <NavItem href="/decks" icon={<Library />} label="Meus Decks" active={pathname === '/decks'} />
-                    {/* <NavItem href="/profile" icon={<User />} label="Perfil" active={pathname === '/profile'} /> */}
+                    <NavItem href="/profile" icon={<User />} label="Perfil" active={pathname === '/profile'} />
                 </nav>
 
                 <div className="p-4 border-t border-border/50 bg-background/20 backdrop-blur-sm space-y-4">
@@ -82,15 +83,19 @@ export function Sidebar({ profile, email }: SidebarProps) {
 
                     {/* User Menu */}
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group cursor-default">
-                            <div className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-secondary-foreground font-bold text-lg shrink-0 overflow-hidden">
-                                {initial}
+                        <Link href="/profile" className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group">
+                            <div className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-secondary-foreground font-bold text-lg shrink-0 overflow-hidden group-hover:border-primary/50">
+                                {profile?.avatar_url ? (
+                                    <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    initial
+                                )}
                             </div>
                             <div className="hidden lg:block overflow-hidden">
-                                <div className="font-bold text-sm truncate text-foreground">{profile?.full_name || 'Estudante'}</div>
+                                <div className="font-bold text-sm truncate text-foreground group-hover:text-primary transition-colors">{profile?.full_name || 'Estudante'}</div>
                                 <div className="text-xs text-muted-foreground truncate opacity-70">{email}</div>
                             </div>
-                        </div>
+                        </Link>
 
                         <button
                             onClick={handleLogout}
