@@ -14,6 +14,7 @@ function LoginForm() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
+    const [grade, setGrade] = useState('Ensino Médio')
     const [referralCode, setReferralCode] = useState('')
     const [error, setError] = useState<string | null>(null)
 
@@ -37,19 +38,19 @@ function LoginForm() {
                 const next = searchParams.get('next')
                 router.push(next || '/hub')
             } else {
+                const trimmedReferral = referralCode.trim().toUpperCase()
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
                         data: {
                             full_name: name,
-                            referral_code: referralCode.trim().toUpperCase()
+                            grade: grade,
+                            referral_code: trimmedReferral || null
                         }
                     }
                 })
                 if (error) throw error
-                // Check if email confirmation is required? Usually Supabase defaults to "Confirm Email".
-                // For this MVP, let's assume it might auto-login or ask for confirm.
                 alert('Conta criada! Verifique se recebeu um email de confirmação ou tente entrar.')
                 setIsLogin(true)
             }
@@ -124,10 +125,14 @@ function LoginForm() {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Série</label>
-                                        <select className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer">
-                                            <option>Ensino Médio</option>
-                                            <option>Fundamental II</option>
-                                            <option>Concurso</option>
+                                        <select
+                                            value={grade}
+                                            onChange={(e) => setGrade(e.target.value)}
+                                            className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer"
+                                        >
+                                            <option value="Ensino Médio">Ensino Médio</option>
+                                            <option value="Fundamental II">Fundamental II</option>
+                                            <option value="Concurso">Concurso</option>
                                         </select>
                                     </div>
                                 </div>

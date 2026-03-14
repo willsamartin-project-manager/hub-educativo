@@ -24,14 +24,22 @@ RETURNS trigger as $$
 DECLARE
   referrer_id UUID;
   ref_code TEXT;
+  raw_referral TEXT;
+  raw_full_name TEXT;
+  raw_grade TEXT;
 BEGIN
   -- Gerar código unico para o novo usuario
   ref_code := generate_referral_code();
   
+  -- Extrair metadados com segurança
+  raw_referral := NULLIF(new.raw_user_meta_data->>'referral_code', '');
+  raw_full_name := COALESCE(new.raw_user_meta_data->>'full_name', 'Estudante');
+  raw_grade := COALESCE(new.raw_user_meta_data->>'grade', 'Ensino Médio');
+
   -- Verificar se foi indicado por alguém
-  IF new.raw_user_meta_data->>'referral_code' IS NOT NULL THEN
+  IF raw_referral IS NOT NULL THEN
     SELECT id INTO referrer_id FROM public.profiles 
-    WHERE referral_code = (new.raw_user_meta_data->>'referral_code');
+    WHERE referral_code = raw_referral;
     
     -- Se o indicador existe
     IF referrer_id IS NOT NULL THEN
@@ -42,8 +50,8 @@ BEGIN
       INSERT INTO public.profiles (id, full_name, grade, coins, referral_code, referred_by)
       VALUES (
         new.id, 
-        new.raw_user_meta_data->>'full_name', 
-        'Ensino Médio', 
+        raw_full_name, 
+        raw_grade, 
         550, 
         ref_code,
         referrer_id
@@ -56,13 +64,18 @@ BEGIN
   INSERT INTO public.profiles (id, full_name, grade, coins, referral_code)
   values (
     new.id, 
-    new.raw_user_meta_data->>'full_name', 
-    'Ensino Médio', 
+    raw_full_name, 
+    raw_grade, 
     500,
     ref_code
   );
   
   return new;
+EXCEPTION WHEN OTHERS THEN
+  -- Fallback de emergência para garantir que o usuário seja criado no Auth mesmo se o perfil falhar
+  -- (Embora o ideal seja o perfil existir sempre)
+  RAISE WARNING 'Erro ao criar perfil para %: %', new.id, SQLERRM;
+  RETURN new;
 END;
 $$ language plpgsql security definer;
 
