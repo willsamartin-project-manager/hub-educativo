@@ -18,63 +18,76 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Atualizar handle_new_user para gerar código e processar indicação
+-- Função ultra-robusta para criação de perfil
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger as $$
 DECLARE
-  referrer_id UUID;
-  ref_code TEXT;
-  raw_referral TEXT;
-  raw_full_name TEXT;
-  raw_grade TEXT;
+  v_referrer_id UUID;
+  v_ref_code TEXT;
+  v_full_name TEXT;
+  v_grade TEXT;
+  v_raw_referral TEXT;
 BEGIN
-  -- Gerar código unico para o novo usuario
-  ref_code := generate_referral_code();
-  
-  -- Extrair metadados com segurança
-  raw_referral := NULLIF(new.raw_user_meta_data->>'referral_code', '');
-  raw_full_name := COALESCE(new.raw_user_meta_data->>'full_name', 'Estudante');
-  raw_grade := COALESCE(new.raw_user_meta_data->>'grade', 'Ensino Médio');
+  -- 1. Gerar um novo código de indicação (com loop simples para evitar colisão rara)
+  LOOP
+    v_ref_code := generate_referral_code();
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.profiles WHERE referral_code = v_ref_code);
+  END LOOP;
 
-  -- Verificar se foi indicado por alguém
-  IF raw_referral IS NOT NULL THEN
-    SELECT id INTO referrer_id FROM public.profiles 
-    WHERE referral_code = raw_referral;
-    
-    -- Se o indicador existe
-    IF referrer_id IS NOT NULL THEN
-      -- Dar 50 moedas para o indicador
-      UPDATE public.profiles SET coins = coins + 50 WHERE id = referrer_id;
+  -- 2. Extrair metadados com segurança máxima
+  BEGIN
+    v_full_name := COALESCE(new.raw_user_meta_data->>'full_name', 'Estudante');
+    v_grade := COALESCE(new.raw_user_meta_data->>'grade', 'Ensino Médio');
+    v_raw_referral := NULLIF(TRIM(new.raw_user_meta_data->>'referral_code'), '');
+  EXCEPTION WHEN OTHERS THEN
+    v_full_name := 'Estudante';
+    v_grade := 'Ensino Médio';
+    v_raw_referral := NULL;
+  END;
+
+  -- 3. Tentar processar a indicação (se houver)
+  IF v_raw_referral IS NOT NULL THEN
+    BEGIN
+      SELECT id INTO v_referrer_id FROM public.profiles 
+      WHERE referral_code = v_raw_referral;
       
-      -- Inserir perfil com bônus de 50 moedas (500 base + 50 bônus)
-      INSERT INTO public.profiles (id, full_name, grade, coins, referral_code, referred_by)
-      VALUES (
-        new.id, 
-        raw_full_name, 
-        raw_grade, 
-        550, 
-        ref_code,
-        referrer_id
-      );
-      RETURN new;
-    END IF;
+      IF v_referrer_id IS NOT NULL THEN
+        -- Tentar dar o bônus para o indicador (em bloco separado para não quebrar o cadastro se falhar)
+        BEGIN
+          UPDATE public.profiles SET coins = coins + 50 WHERE id = v_referrer_id;
+        EXCEPTION WHEN OTHERS THEN
+          -- Se falhar o bônus, apenas ignoramos e prosseguimos
+          RAISE WARNING 'Falha ao dar bônus para o indicador %', v_referrer_id;
+        END;
+
+        -- Tentar inserir o novo perfil com bônus
+        BEGIN
+          INSERT INTO public.profiles (id, full_name, grade, coins, referral_code, referred_by)
+          VALUES (new.id, v_full_name, v_grade, 550, v_ref_code, v_referrer_id);
+          RETURN new;
+        EXCEPTION WHEN OTHERS THEN
+          -- Se falhar a inserção com bônus, deixamos cair no fallback abaixo
+          RAISE WARNING 'Falha ao inserir perfil com bônus para %: %', new.id, SQLERRM;
+        END;
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'Erro geral no processamento de referral para %: %', new.id, SQLERRM;
+    END;
   END IF;
 
-  -- Inserção padrão se não houver indicação válida
-  INSERT INTO public.profiles (id, full_name, grade, coins, referral_code)
-  values (
-    new.id, 
-    raw_full_name, 
-    raw_grade, 
-    500,
-    ref_code
-  );
-  
-  return new;
-EXCEPTION WHEN OTHERS THEN
-  -- Fallback de emergência para garantir que o usuário seja criado no Auth mesmo se o perfil falhar
-  -- (Embora o ideal seja o perfil existir sempre)
-  RAISE WARNING 'Erro ao criar perfil para %: %', new.id, SQLERRM;
+  -- 4. Inserção de Fallback (Sempre tentamos esta se nada acima retornou)
+  BEGIN
+    INSERT INTO public.profiles (id, full_name, grade, coins, referral_code)
+    VALUES (new.id, v_full_name, v_grade, 500, v_ref_code)
+    ON CONFLICT (id) DO UPDATE SET
+      full_name = EXCLUDED.full_name,
+      grade = EXCLUDED.grade;
+  EXCEPTION WHEN OTHERS THEN
+    -- Última instância: se nem o fallback funcionar, pelo menos não quebramos o Auth
+    -- Assim o usuário é criado no Auth.users mas fica sem profile (corrigível via backfill)
+    RAISE WARNING 'CRITICAL: Falha total ao criar perfil para %: %', new.id, SQLERRM;
+  END;
+
   RETURN new;
 END;
 $$ language plpgsql security definer;
