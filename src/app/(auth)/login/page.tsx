@@ -39,15 +39,22 @@ function LoginForm() {
                 router.push(next || '/hub')
             } else {
                 const trimmedReferral = referralCode.trim().toUpperCase()
+
+                // Construir metadados de forma mais conservadora
+                const signupMetadata: any = {
+                    full_name: name || 'Estudante',
+                    grade: grade
+                }
+
+                if (trimmedReferral) {
+                    signupMetadata.referral_code = trimmedReferral
+                }
+
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
-                        data: {
-                            full_name: name,
-                            grade: grade,
-                            referral_code: trimmedReferral || null
-                        }
+                        data: signupMetadata
                     }
                 })
                 if (error) throw error
