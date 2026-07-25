@@ -1,36 +1,39 @@
+import { cache } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileHeader } from "@/components/dashboard/MobileHeader";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { createClient } from "@/lib/supabase-server";
+
+const getLayoutData = cache(async () => {
+    try {
+        const supabase = await createClient();
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData?.user ?? null;
+
+        if (!user) return { user: null, profile: null };
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, full_name, coins, avatar_url')
+            .eq('id', user.id)
+            .single();
+
+        return { user, profile };
+    } catch (e) {
+        console.warn("Layout Auth Error:", e);
+        return { user: null, profile: null };
+    }
+});
 
 export default async function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const supabase = await createClient();
-
-    let user = null;
-    let profile = null;
-
-    try {
-        const { data } = await supabase.auth.getUser();
-        user = data?.user;
-    } catch (e) {
-        console.warn("Layout Auth Error:", e);
-    }
-
-    if (user) {
-        const { data } = await supabase
-            .from('profiles')
-            .select('id, full_name, coins, avatar_url')
-            .eq('id', user.id)
-            .single();
-        profile = data;
-    }
+    const { user, profile } = await getLayoutData();
 
     return (
-        <div className="min-h-[100dvh] flex bg-background overflow-hidden preserve-3d">
+        <div className="min-h-[100dvh] flex bg-background overflow-hidden">
             {/* Sidebar - Only impactful on desktop */}
             <Sidebar profile={profile} email={user?.email} />
 

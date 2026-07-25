@@ -22,6 +22,8 @@ function LoginForm() {
     const searchParams = useSearchParams()
 
     useEffect(() => {
+        const mode = searchParams.get('mode')
+        if (mode === 'signup') setIsLogin(false)
         const ref = searchParams.get('ref')
         if (ref) setReferralCode(ref)
     }, [searchParams])

@@ -20,6 +20,14 @@ const PRESET_AVATARS = [
 
 const GRADE_OPTIONS = ["Ensino Médio", "Fundamental II", "Concurso"];
 
+// Helper to calculate exact accuracy percentage without victory bonus distortion
+const calculateAccuracy = (score: number, maxScore: number) => {
+    if (!maxScore || maxScore <= 0) return 0;
+    const baseScore = score > maxScore ? score - 1000 : score;
+    const accuracy = Math.round((baseScore / maxScore) * 100);
+    return Math.min(100, Math.max(0, accuracy));
+};
+
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
     const [matches, setMatches] = useState<any[]>([]);
@@ -99,7 +107,6 @@ export default function ProfilePage() {
             const fileName = `${user.id}-${Math.random()}.${fileExt}`;
             const filePath = `avatars/${fileName}`;
 
-            // Check if bucket exists, if not this might fail (user might need to create 'avatars' bucket)
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
@@ -118,6 +125,10 @@ export default function ProfilePage() {
             setSaving(false);
         }
     };
+
+    const averageAccuracy = matches.length > 0
+        ? Math.round(matches.reduce((acc, m) => acc + calculateAccuracy(m.score, m.max_score), 0) / matches.length)
+        : 0;
 
     if (loading) return <div className="h-[50vh] flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
 
@@ -260,6 +271,10 @@ export default function ProfilePage() {
                                         <ImageIcon className="w-4 h-4" />
                                         {matches.length} Batalhas
                                     </div>
+                                    <div className="flex items-center gap-2 text-sm bg-emerald-500/10 px-4 py-2 rounded-2xl text-emerald-400 font-bold border border-emerald-500/20">
+                                        <Sparkles className="w-4 h-4" />
+                                        {averageAccuracy}% Precisão Média
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -325,34 +340,37 @@ export default function ProfilePage() {
                             <p className="text-sm opacity-60">Comece um novo deck para ver seu histórico aqui!</p>
                         </div>
                     ) : (
-                        matches.map((match, i) => (
-                            <motion.div
-                                key={match.id}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                className="group bg-card/50 hover:bg-card border border-border/50 p-5 rounded-2xl flex justify-between items-center transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
-                            >
-                                <div className="space-y-1">
-                                    <div className="font-bold text-lg group-hover:text-primary transition-colors">{match.deck?.title || match.deck?.subject}</div>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-tighter opacity-70">
-                                        <span>{new Date(match.played_at).toLocaleDateString()}</span>
-                                        {match.challenge && (
-                                            <>
-                                                <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                                                <span className="text-purple-400">Desafio de {match.challenge.creator?.full_name}</span>
-                                            </>
-                                        )}
+                        matches.map((match, i) => {
+                            const accuracy = calculateAccuracy(match.score, match.max_score);
+                            return (
+                                <motion.div
+                                    key={match.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="group bg-card/50 hover:bg-card border border-border/50 p-5 rounded-2xl flex justify-between items-center transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
+                                >
+                                    <div className="space-y-1">
+                                        <div className="font-bold text-lg group-hover:text-primary transition-colors">{match.deck?.title || match.deck?.subject}</div>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-tighter opacity-70">
+                                            <span>{new Date(match.played_at).toLocaleDateString()}</span>
+                                            {match.challenge && (
+                                                <>
+                                                    <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                                                    <span className="text-purple-400">Desafio de {match.challenge.creator?.full_name}</span>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="font-mono font-black text-2xl text-primary drop-shadow-[0_0_10px_rgba(var(--color-primary),0.2)]">{match.score} <span className="text-xs font-sans text-muted-foreground/50 ml-px">pts</span></div>
-                                    <div className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${match.score / match.max_score >= 0.7 ? 'text-green-400' : 'text-amber-400'}`}>
-                                        {Math.round((match.score / match.max_score) * 100)}% de Precisão
+                                    <div className="text-right">
+                                        <div className="font-mono font-black text-2xl text-primary drop-shadow-[0_0_10px_rgba(var(--color-primary),0.2)]">{match.score} <span className="text-xs font-sans text-muted-foreground/50 ml-px">pts</span></div>
+                                        <div className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${accuracy >= 70 ? 'text-green-400' : 'text-amber-400'}`}>
+                                            {accuracy}% de Precisão
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))
+                                </motion.div>
+                            );
+                        })
                     )}
                 </div>
             </div>

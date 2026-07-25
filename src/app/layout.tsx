@@ -14,8 +14,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hub Educativo | Gamificação e IA",
-  description: "Aprenda jogando com inteligência artificial.",
+  title: "Hub Educativo | Aprenda Jogando com Inteligência Artificial",
+  description: "Desafie seus conhecimentos, crie decks de estudo personalizados com IA e enfrente seus amigos em batalhas educativas.",
+  keywords: ["educação", "ia", "flashcards", "quizzes", "gamificação", "estudos", "enem", "concursos"],
+  authors: [{ name: "Hub Educativo" }],
+  openGraph: {
+    title: "Hub Educativo | Aprenda Jogando com IA",
+    description: "Desafie seus conhecimentos com quizzes gerados por inteligência artificial.",
+    type: "website",
+    locale: "pt_BR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hub Educativo",
+    description: "Aprenda jogando com inteligência artificial.",
+  },
 };
 
 export const viewport: Viewport = {
@@ -31,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

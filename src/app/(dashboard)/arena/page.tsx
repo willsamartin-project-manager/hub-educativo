@@ -91,8 +91,7 @@ function ArenaContent() {
         if (shouldFetch) {
             fetchMore()
         }
-    }, [currentQuestionIndex, mode, status, deck.length, subject, grade, appendQuestions])
-
+    }, [currentQuestionIndex, mode, status, deck.length, subject, grade, appendQuestions, userId])
 
     useEffect(() => {
         const loadDeck = async () => {
@@ -115,11 +114,11 @@ function ArenaContent() {
     }
 
     if (status === 'idle') {
-        return <LobbyScreen onStart={startGame} />
+        return <LobbyScreen onStart={startGame} userId={userId} />
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
+        <div className="min-h-[calc(100vh-10rem)] bg-background text-foreground flex flex-col relative overflow-hidden rounded-3xl border border-white/5 shadow-2xl">
             {/* Ambient Background - Optimized */}
             <div className="absolute top-0 left-0 w-full h-full -z-10 bg-[radial-gradient(circle_at_top,_var(--color-primary)_0%,_transparent_40%)] opacity-20" />
 
@@ -166,21 +165,29 @@ function ArenaContent() {
 }
 
 // MEMOIZED COMPONENT
-const LobbyScreen = memo(function LobbyScreen({ onStart }: { onStart: (deck: Question[], deckId: string, mode: any, subject: string, grade: string) => void }) {
+const LobbyScreen = memo(function LobbyScreen({
+    onStart,
+    userId: initialUserId
+}: {
+    onStart: (deck: Question[], deckId: string, mode: any, subject: string, grade: string) => void
+    userId: string | null
+}) {
     const [isLoading, setIsLoading] = useState(false)
-    const [userId, setUserId] = useState<string | null>(null)
+    const [userId, setUserId] = useState<string | null>(initialUserId)
     const [selectedGrade, setSelectedGrade] = useState('Ensino Médio')
     const [selectedMode, setSelectedMode] = useState<'standard' | 'marathon'>('standard')
 
-    const fetchUser = async () => {
-        const { supabase } = await import('@/lib/supabase')
-        const { data } = await supabase.auth.getUser()
-        if (data.user) {
-            setUserId(data.user.id)
+    useEffect(() => {
+        if (initialUserId) {
+            setUserId(initialUserId)
+            return
         }
-    }
-
-    if (!userId) fetchUser()
+        const fetchUser = async () => {
+            const { data } = await supabase.auth.getUser()
+            if (data?.user) setUserId(data.user.id)
+        }
+        fetchUser()
+    }, [initialUserId])
 
     const { play } = useSound()
     const { light } = useHaptic()
@@ -228,11 +235,11 @@ const LobbyScreen = memo(function LobbyScreen({ onStart }: { onStart: (deck: Que
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+        <div className="flex items-center justify-center p-2 sm:p-4 relative overflow-hidden py-4 sm:py-8">
             {isLoading && <LoadingOverlay />}
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,_var(--color-primary)_0%,_transparent_50%)] opacity-20" />
 
-            <div className="w-full max-w-lg bg-card border border-border/50 p-8 rounded-3xl shadow-2xl relative">
+            <div className="w-full max-w-lg bg-card border border-border/50 p-6 sm:p-8 rounded-3xl shadow-2xl relative">
                 <Link href="/hub" className="absolute top-4 left-4 p-2 hover:bg-white/5 rounded-full"><ArrowLeft className="w-5 h-5" /></Link>
 
                 <div className="text-center mb-8 mt-4">
@@ -322,7 +329,7 @@ const QuestionView = memo(function QuestionView({ question, onAnswer, index, tot
     // Selectors for specific actions to avoid passing full store
     const nextQuestion = useGameStore(state => state.nextQuestion)
     const playSound = useSound().play
-    const haptic = useHaptic() // Haptic might be stable, but hooks are cheap
+    const haptic = useHaptic()
 
     // Callback optimization
     const handleSelect = useCallback(async (idx: number) => {
@@ -345,7 +352,7 @@ const QuestionView = memo(function QuestionView({ question, onAnswer, index, tot
             playSound('wrong')
             haptic.error()
         }
-    }, [selected, onAnswer, playSound, haptic]) // Dependencies
+    }, [selected, onAnswer, playSound, haptic])
 
     const handleNext = useCallback(() => {
         nextQuestion()
@@ -354,11 +361,11 @@ const QuestionView = memo(function QuestionView({ question, onAnswer, index, tot
     return (
         <motion.div
             className="w-full max-w-2xl"
-            initial={{ opacity: 0, scale: 0.95 }} // More subtle scale for mobile perf
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, x: -20 }} // Lesser movement
+            exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            style={{ willChange: 'opacity, transform' }} // Hardware acceleration hint
+            style={{ willChange: 'opacity, transform' }}
         >
             <div className="text-center mb-8">
                 <span className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
@@ -378,13 +385,13 @@ const QuestionView = memo(function QuestionView({ question, onAnswer, index, tot
                     return (
                         <motion.button
                             key={i}
-                            initial={{ opacity: 0, y: 10 }} // Reduced distance
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05, duration: 0.2 }} // Faster stagger
+                            transition={{ delay: i * 0.05, duration: 0.2 }}
                             onClick={() => handleSelect(i)}
                             disabled={selected !== null}
                             className={`w-full p-4 rounded-xl border text-left font-medium transition-all duration-300 relative overflow-hidden group ${stateClass}`}
-                            style={{ willChange: 'transform' }} // Hint
+                            style={{ willChange: 'transform' }}
                         >
                             <span className="opacity-50 mr-4 font-mono">{String.fromCharCode(65 + i)}</span>
                             {opt}
@@ -438,7 +445,7 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                 spread: 70,
                 origin: { y: 0.6 },
                 colors: ['#FFD700', '#FFA500', '#ffffff'],
-                disableForReducedMotion: true // Accessibility/Perf
+                disableForReducedMotion: true
             })
         } else if (status === 'lost') {
             play('lose')
@@ -454,7 +461,6 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
             const { data: { user } } = await supabase.auth.getUser()
 
             if (user) {
-                // If in challenge mode, check for existing placeholder match to update
                 let matchIdToUpdate = null;
                 const challengeId = useGameStore.getState().challengeId;
 
@@ -464,24 +470,22 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
                         .select('id')
                         .eq('challenge_id', challengeId)
                         .eq('user_id', user.id)
-                        .maybeSingle(); // Use maybeSingle to avoid 406 on multiple
+                        .maybeSingle();
 
                     if (existing) matchIdToUpdate = existing.id;
                 }
 
                 let error;
                 if (matchIdToUpdate) {
-                    // Update existing
                     const { error: updateError } = await supabase
                         .from('matches')
                         .update({
                             score: score,
-                            played_at: new Date().toISOString() // Update time
+                            played_at: new Date().toISOString()
                         })
                         .eq('id', matchIdToUpdate);
                     error = updateError;
                 } else {
-                    // Insert new (Standard game or no placeholder found)
                     const { error: insertError } = await supabase.from('matches').insert({
                         user_id: user.id,
                         deck_id: deckId,
@@ -505,7 +509,7 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
         }
 
         saveMatch()
-    }, [])
+    }, [deckId, deckLength, saved, score])
 
     return (
         <motion.div
@@ -563,7 +567,7 @@ const ResultView = memo(function ResultView({ status, score, onReset, onRestart 
             {status === 'won' && !mode && deckId && (
                 <div className="flex flex-col items-center gap-2 pt-2">
                     <button
-                        disabled={isSaving} // Reuse isSaving or create new one
+                        disabled={isSaving}
                         onClick={async (e) => {
                             const btn = e.currentTarget;
                             if (btn.disabled) return;
